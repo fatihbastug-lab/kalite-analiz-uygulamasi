@@ -2,92 +2,62 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Kalite Analiz Sistemi</title>
+    <title>Kalite Analiz Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-50 font-sans">
-    <div class="max-w-5xl mx-auto py-10 px-4">
-        <header class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-slate-800 mb-2">🛡️ Kalite Analiz Pro</h1>
-            <p class="text-slate-500">Excel raporlarınızı saniyeler içinde analiz edin.</p>
-        </header>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
-            <div id="drop-area" class="border-2 border-dashed border-blue-300 rounded-xl p-10 text-center hover:bg-blue-50 transition-colors cursor-pointer">
-                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden">
-                <p class="text-lg text-slate-600">Dosyayı buraya sürükleyin veya <span class="text-blue-600 font-semibold text-decoration-underline">seçin</span></p>
-                <p class="text-xs text-slate-400 mt-2">Sadece .xlsx, .xls veya .csv dosyaları</p>
-            </div>
+<body class="bg-gray-100 p-5">
+    <div class="max-w-2xl mx-auto bg-white p-10 rounded-xl shadow-md mt-10">
+        <h1 class="text-2xl font-bold mb-5 text-center text-blue-600">🛡️ Kalite Analiz Paneli</h1>
+        <p class="text-center text-gray-500 mb-8">Lütfen analiz etmek istediğiniz Excel dosyasını seçin.</p>
+        
+        <div class="flex justify-center mb-10">
+            <input type="file" id="fileInput" accept=".xlsx, .xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
 
-        <div id="dashboard" class="hidden animate-fade-in">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 class="text-slate-400 text-sm uppercase font-bold tracking-wider">Toplam Kontrol</h3>
-                    <p id="totalCount" class="text-3xl font-black text-slate-800">-</p>
-                </div>
-                <div class="bg-green-50 p-6 rounded-xl border border-green-100">
-                    <h3 class="text-green-600 text-sm uppercase font-bold tracking-wider">Uygun</h3>
-                    <p id="passCount" class="text-3xl font-black text-green-700">-</p>
-                </div>
-                <div class="bg-red-50 p-6 rounded-xl border border-red-100">
-                    <h3 class="text-red-600 text-sm uppercase font-bold tracking-wider">Uygun Değil</h3>
-                    <p id="failCount" class="text-3xl font-black text-red-700">-</p>
-                </div>
+        <div id="results" class="hidden">
+            <div id="stats" class="grid grid-cols-2 gap-4 mb-5 text-center font-bold text-white">
+                <div id="ok" class="bg-green-500 p-4 rounded-lg leading-tight">Uygun: 0</div>
+                <div id="nok" class="bg-red-500 p-4 rounded-lg leading-tight">Hatalı: 0</div>
             </div>
-
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-                <h3 class="text-lg font-bold mb-4 text-slate-700 font-semibold">Detaylı Liste</h3>
-                <div id="tableOutput"></div>
-            </div>
+            <div id="tableOutput" class="border rounded overflow-hidden text-xs"></div>
         </div>
     </div>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const dropArea = document.getElementById('drop-area');
-
-        dropArea.onclick = () => fileInput.click();
-
-        fileInput.onchange = (e) => handleFile(e.target.files[0]);
-
-        function handleFile(file) {
+        document.getElementById('fileInput').addEventListener('change', function(e) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                renderDashboard(jsonData);
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                showData(json);
             };
-            reader.readAsArrayBuffer(file);
-        }
+            reader.readAsArrayBuffer(e.target.files[0]);
+        });
 
-        function renderDashboard(data) {
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('totalCount').innerText = data.length;
-            
-            // "Durum" sütununu ara (büyük/küçük harf duyarsız)
-            const passData = data.filter(row => 
-                Object.values(row).some(v => v.toString().toLowerCase() === 'uygun')
-            );
-            
-            document.getElementById('passCount').innerText = passData.length;
-            document.getElementById('failCount').innerText = data.length - passData.length;
-
-            let tableHtml = '<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr>';
-            Object.keys(data[0]).forEach(key => tableHtml += `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${key}</th>`);
-            tableHtml += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
+        function showData(data) {
+            document.getElementById('results').classList.remove('hidden');
+            let ok = 0, nok = 0;
             
             data.forEach(row => {
-                tableHtml += '<tr>';
-                Object.values(row).forEach(val => tableHtml += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${val}</td>`);
-                tableHtml += '</tr>';
+                const val = Object.values(row).join(" ").toLowerCase();
+                if(val.includes("uygun") && !val.includes("değil")) ok++;
+                else if(val.includes("değil") || val.includes("hata")) nok++;
             });
-            tableHtml += '</tbody></table>';
-            document.getElementById('tableOutput').innerHTML = tableHtml;
+
+            document.getElementById('ok').innerText = "Uygun: " + ok;
+            document.getElementById('nok').innerText = "Hatalı: " + nok;
+            
+            let html = '<table class="w-full"><thead><tr class="bg-gray-200">';
+            Object.keys(data[0]).forEach(k => html += `<th class="p-2 border">${k}</th>`);
+            html += '</tr></thead><tbody>';
+            data.slice(0, 10).forEach(r => { // İlk 10 satırı göster
+                html += '<tr>';
+                Object.values(r).forEach(v => html += `<td class="p-2 border text-center">${v}</td>`);
+                html += '</tr>';
+            });
+            document.getElementById('tableOutput').innerHTML = html + '</tbody></table>';
         }
     </script>
 </body>
