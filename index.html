@@ -2,130 +2,280 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ESTEL ANALİZ PRO | Kusursuz Analitik</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESTEL ANALİZ PRO | Kurumsal Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f8fafc; }
-        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); }
-        .slicer-btn { transition: all 0.2s ease; border: 1px solid #1e293b; }
-        .slicer-btn.active { background: #2563eb; border-color: #3b82f6; box-shadow: 0 0 15px rgba(37, 99, 235, 0.3); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); position: fixed; z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-            .sidebar.open { transform: translateX(0); }
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f8fafc; overflow: hidden; }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .slicer-btn { transition: all 0.2s ease; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .slicer-btn:hover { background: rgba(59, 130, 246, 0.1); }
+        .slicer-btn.active { background: #2563eb; border-color: #3b82f6; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); color: white; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        #share-modal { display: none; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex h-screen">
 
-    <button onclick="toggleSidebar()" class="md:hidden fixed bottom-6 right-6 z-[110] bg-blue-600 p-4 rounded-full shadow-2xl">
-        <span id="menuIcon">☰</span>
-    </button>
-
-    <aside id="sidebar" class="sidebar w-80 bg-slate-950 border-r border-slate-900 p-6 flex flex-col h-full overflow-y-auto">
-        <div class="mb-8">
-            <h1 class="text-3xl font-black text-blue-500 tracking-tighter">ESTEL ANALİZ</h1>
-            <p class="text-[9px] font-bold text-slate-500 tracking-[0.3em] uppercase">Kurumsal Analitik Terminali</p>
+    <aside class="w-80 bg-slate-950 border-r border-slate-900 flex flex-col">
+        <div class="p-6">
+            <h1 class="text-2xl font-black text-blue-500 tracking-tighter">ESTEL PRO</h1>
+            <p class="text-[10px] font-bold text-slate-500 tracking-widest uppercase">Analitik Terminali</p>
         </div>
 
-        <div class="space-y-3 mb-8">
-            <label class="text-[10px] font-black text-slate-600 uppercase italic">Veri Kaynağı Yapılandırması</label>
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="switchSource('excel')" id="btn-excel" class="slicer-btn active p-3 rounded-xl text-[10px] font-bold bg-slate-900">EXCEL YÜKLE</button>
-                <button onclick="switchSource('sql')" id="btn-sql" class="slicer-btn p-3 rounded-xl text-[10px] font-bold bg-slate-900">SQL SERVER</button>
+        <div class="flex-1 overflow-y-auto px-6 space-y-8 custom-scroll">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-600 uppercase">Veri Kaynağı</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="src-excel" onclick="switchSource('excel')" class="slicer-btn active p-2 rounded-lg text-[10px] font-bold bg-slate-900">EXCEL</button>
+                    <button id="src-sql" onclick="switchSource('sql')" class="slicer-btn p-2 rounded-lg text-[10px] font-bold bg-slate-900">SQL</button>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div id="slicer-date-box" class="space-y-2">
+                    <label class="text-[10px] font-black text-blue-400 uppercase">📅 Dönem Dilimleyici</label>
+                    <div id="filter-dates" class="flex flex-col gap-1"></div>
+                </div>
+
+                <div id="slicer-loc-box" class="space-y-2">
+                    <label class="text-[10px] font-black text-emerald-400 uppercase">📍 Bölge / Lokasyon</label>
+                    <div id="filter-locs" class="flex flex-wrap gap-1"></div>
+                </div>
+
+                <div id="slicer-team-box" class="space-y-2">
+                    <label class="text-[10px] font-black text-purple-400 uppercase">👥 Takım Dilimleyici</label>
+                    <div id="filter-teams" class="flex flex-wrap gap-1"></div>
+                </div>
+
+                <div id="slicer-error-box" class="space-y-2">
+                    <label class="text-[10px] font-black text-red-400 uppercase">⚠️ Hata Kategorisi</label>
+                    <div id="filter-errors" class="flex flex-wrap gap-1"></div>
+                </div>
             </div>
         </div>
 
-        <div id="sql-panel" class="hidden glass p-4 rounded-2xl mb-6 border-blue-500/20">
-            <p class="text-[10px] font-bold text-blue-400 mb-3 underline">SQL SERVER CONNECTION</p>
-            <input type="text" placeholder="Server IP/Instance" class="w-full bg-black/50 border border-slate-800 p-2 rounded text-xs mb-2 outline-none focus:border-blue-500" value="10.0.0.45">
-            <button onclick="alert('SQL Veritabanına bağlanılıyor...')" class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-lg text-[10px] font-bold transition-all">BAĞLANTIYI TEST ET</button>
-        </div>
-
-        <div class="flex-1 space-y-6 overflow-y-auto no-scrollbar">
-            <div>
-                <label class="text-[10px] font-black text-slate-500 uppercase block mb-3">Bölge / Lokasyon</label>
-                <div id="loc-filters" class="flex flex-wrap gap-2"></div>
+        <div class="p-6 border-t border-slate-900 space-y-2">
+            <input type="file" id="excel-input" class="hidden" accept=".xlsx, .xls">
+            <button onclick="document.getElementById('excel-input').click()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl text-xs font-black transition-all">VERİ YÜKLE</button>
+            <div class="flex gap-2">
+                <button onclick="exportData()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-2 rounded-lg text-[10px] font-bold italic">İNDİR</button>
+                <button onclick="toggleShare()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-2 rounded-lg text-[10px] font-bold">PAYLAŞ</button>
             </div>
-            <div>
-                <label class="text-[10px] font-black text-slate-500 uppercase block mb-3">Takım / Grup</label>
-                <div id="team-filters" class="flex flex-wrap gap-2"></div>
-            </div>
-        </div>
-
-        <div class="mt-6 space-y-3">
-            <input type="file" id="excel-input" class="hidden" accept=".xlsx, .xls, .csv">
-            <button onclick="document.getElementById('excel-input').click()" id="upload-main-btn" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-xs font-black shadow-lg shadow-blue-900/20">📂 HAM VERİ YÜKLE</button>
-            <button onclick="exportToExcel()" class="w-full bg-emerald-700 hover:bg-emerald-600 py-3 rounded-xl text-[10px] font-bold transition-all">📥 ANALİZİ DIŞA AKTAR</button>
         </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-950/20 via-transparent to-transparent p-4 md:p-10">
+    <main class="flex-1 overflow-y-auto p-8 custom-scroll bg-slate-950">
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div class="glass p-6 rounded-[2rem]">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">Genel Başarı</p>
-                <h3 id="kpi-avg" class="text-3xl font-black text-white">%0</h3>
+        <div class="grid grid-cols-4 gap-6 mb-8">
+            <div class="glass p-5 rounded-2xl border-b-2 border-blue-500">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">Başarı Ortalaması</p>
+                <h3 id="kpi-avg" class="text-4xl font-black text-white">%0</h3>
             </div>
-            <div class="glass p-6 rounded-[2rem] border-l-4 border-red-600">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">Kritik Hata</p>
-                <h3 id="kpi-critical" class="text-3xl font-black text-red-500">0</h3>
+            <div class="glass p-5 rounded-2xl border-b-2 border-red-500">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">Kritik Hata Sayısı</p>
+                <h3 id="kpi-critical" class="text-4xl font-black text-red-500">0</h3>
             </div>
-            <div class="glass p-6 rounded-[2rem]">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">Toplam Kayıt</p>
-                <h3 id="kpi-count" class="text-3xl font-black text-blue-400">0</h3>
+            <div class="glass p-5 rounded-2xl border-b-2 border-emerald-500">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">Değerlendirilen Kayıt</p>
+                <h3 id="kpi-count" class="text-4xl font-black text-emerald-400">0</h3>
             </div>
-            <div class="glass p-6 rounded-[2rem]">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">En İyi Bölge</p>
+            <div class="glass p-5 rounded-2xl border-b-2 border-purple-500">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">En İyi Performans</p>
                 <h3 id="kpi-best" class="text-xl font-black text-white truncate">-</h3>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <div class="lg:col-span-2 glass p-8 rounded-[2.5rem]">
-                <h4 class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-widest">Performans Zaman Trendi</h4>
-                <div class="h-64"><canvas id="chart-trend"></canvas></div>
+        <div class="grid grid-cols-3 gap-8 mb-8">
+            <div class="col-span-2 glass p-6 rounded-3xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-tighter">PERFORMANS TRENDİ (ZAMAN SERİSİ)</h4>
+                    <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded">Günlük/Aylık</span>
+                </div>
+                <div class="h-72"><canvas id="mainTrendChart"></canvas></div>
             </div>
-            <div class="glass p-8 rounded-[2.5rem]">
-                <h4 class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-widest">Hata Kök Nedenleri</h4>
-                <div id="error-list" class="space-y-4"></div>
+            <div class="glass p-6 rounded-3xl">
+                <h4 class="text-xs font-black text-slate-400 mb-6 uppercase tracking-tighter">HATA DAĞILIM ANALİZİ</h4>
+                <div class="h-72"><canvas id="errorPieChart"></canvas></div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="glass p-8 rounded-[2.5rem]">
-                <h4 class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-widest">MT Başarı Sıralaması (Top 5)</h4>
-                <div id="mt-ranking" class="space-y-3"></div>
+        <div class="grid grid-cols-2 gap-8">
+            <div class="glass p-6 rounded-3xl">
+                <h4 class="text-xs font-black text-slate-400 mb-4 uppercase tracking-tighter">MT BAŞARI SIRALAMASI (TOP 5)</h4>
+                <div id="ranking-list" class="space-y-2">
+                    <p class="text-xs text-slate-600 italic">Veri yüklendiğinde sıralama oluşur.</p>
+                </div>
             </div>
-            <div class="glass p-8 rounded-[2.5rem]">
-                <h4 class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-widest">Birim Bazlı Analiz</h4>
-                <div class="h-64"><canvas id="chart-team"></canvas></div>
+            <div class="glass p-6 rounded-3xl">
+                <h4 class="text-xs font-black text-slate-400 mb-4 uppercase tracking-tighter">BİRİM BAZLI KARŞILAŞTIRMA</h4>
+                <div class="h-60"><canvas id="teamBarChart"></canvas></div>
             </div>
         </div>
     </main>
 
+    <div id="share-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
+        <div class="glass p-8 rounded-3xl max-w-sm w-full text-center space-y-6 border border-blue-500/30">
+            <h3 class="text-xl font-black italic">ANALİZİ PAYLAŞ</h3>
+            <p class="text-xs text-slate-400">Bu analizi PDF veya canlı bağlantı olarak ekiplerinize gönderebilirsiniz.</p>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="alert('PDF Hazırlanıyor...')" class="bg-red-600 p-3 rounded-xl text-xs font-bold">PDF OLARAK DIŞA AKTAR</button>
+                <button onclick="copyLink()" class="bg-blue-600 p-3 rounded-xl text-xs font-bold">CANLI BAĞLANTIYI KOPYALA</button>
+                <button onclick="toggleShare()" class="text-xs text-slate-500 pt-2 underline">Vazgeç</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let rawData = [], charts = {}, activeFilters = { loc: null, team: null };
+        let rawData = [], charts = {}, activeFilters = { date: null, loc: null, team: null, error: null };
 
-        // MOBİL SIDEBAR
-        function toggleSidebar() { 
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('menuIcon').innerText = document.getElementById('sidebar').classList.contains('open') ? '✕' : '☰';
+        // 1. VERİ YÜKLEME VE NORMALİZASYON
+        document.getElementById('excel-input').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const workbook = XLSX.read(new Uint8Array(event.target.result), { type: 'array' });
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                rawData = json.map(row => ({
+                    score: parseFloat(findField(row, ["puan", "skor", "score"])) || 0,
+                    mt: findField(row, ["temsilci", "ad", "personel", "mt"]) || "Tanımsız",
+                    team: findField(row, ["takım", "grup", "team"]) || "Genel",
+                    loc: findField(row, ["lokasyon", "bölge", "city"]) || "Merkez",
+                    errorType: findField(row, ["hata", "kategori", "error"]) || "Diğer",
+                    date: parseExcelDate(findField(row, ["tarih", "date"]))
+                })).sort((a,b) => a.date - b.date);
+
+                initSlicers();
+                renderAll();
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        });
+
+        // 2. GELİŞMİŞ DİLİMLEYİCİ (SLICER) MANTIĞI
+        function initSlicers() {
+            const locs = [...new Set(rawData.map(d => d.loc))];
+            const teams = [...new Set(rawData.map(d => d.team))];
+            const errors = [...new Set(rawData.map(d => d.errorType))];
+            const dates = [...new Set(rawData.map(d => d.date.toLocaleDateString('tr-TR', {month:'long', year:'numeric'})))];
+
+            renderSlicerUI('filter-locs', locs, 'loc');
+            renderSlicerUI('filter-teams', teams, 'team');
+            renderSlicerUI('filter-errors', errors, 'error');
+            renderSlicerUI('filter-dates', dates, 'date');
         }
 
-        // VERİ KAYNAĞI DEĞİŞTİRME
-        function switchSource(src) {
-            document.getElementById('btn-excel').classList.toggle('active', src === 'excel');
-            document.getElementById('btn-sql').classList.toggle('active', src === 'sql');
-            document.getElementById('sql-panel').classList.toggle('hidden', src !== 'sql');
-            document.getElementById('upload-main-btn').classList.toggle('hidden', src === 'sql');
+        function renderSlicerUI(containerId, items, filterKey) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<button onclick="applyFilter('${filterKey}', null)" class="slicer-btn ${!activeFilters[filterKey] ? 'active' : ''} px-2 py-1 rounded text-[9px] font-bold">HEPSİ</button>`;
+            items.forEach(item => {
+                const isActive = activeFilters[filterKey] === item;
+                container.innerHTML += `<button onclick="applyFilter('${filterKey}', '${item}')" class="slicer-btn ${isActive ? 'active' : ''} px-2 py-1 rounded text-[9px] font-bold uppercase">${item}</button>`;
+            });
         }
 
-        // AKILLI SÜTUN BULUCU (En önemli kısım burası!)
+        window.applyFilter = (key, val) => {
+            activeFilters[key] = val;
+            initSlicers();
+            renderAll();
+        };
+
+        // 3. ANALİZ VE GÖRSELLEŞTİRME
+        function renderAll() {
+            const filtered = rawData.filter(d => 
+                (!activeFilters.loc || d.loc === activeFilters.loc) &&
+                (!activeFilters.team || d.team === activeFilters.team) &&
+                (!activeFilters.error || d.errorType === activeFilters.error) &&
+                (!activeFilters.date || d.date.toLocaleDateString('tr-TR', {month:'long', year:'numeric'}) === activeFilters.date)
+            );
+
+            // KPI Hesapla
+            const avg = Math.round(filtered.reduce((a, b) => a + b.score, 0) / filtered.length) || 0;
+            document.getElementById('kpi-avg').innerText = `%${avg}`;
+            document.getElementById('kpi-count').innerText = filtered.length;
+            document.getElementById('kpi-critical').innerText = filtered.filter(d => d.score < 80).length;
+            
+            const bestMT = [...filtered].sort((a,b) => b.score - a.score)[0];
+            document.getElementById('kpi-best').innerText = bestMT ? bestMT.mt : "-";
+
+            updateCharts(filtered);
+            updateRankings(filtered);
+        }
+
+        function updateCharts(data) {
+            // Trend Chart
+            const trendCtx = document.getElementById('mainTrendChart').getContext('2d');
+            if(charts.trend) charts.trend.destroy();
+            charts.trend = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date.toLocaleDateString('tr-TR')),
+                    datasets: [{
+                        label: 'Skor',
+                        data: data.map(d => d.score),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true, tension: 0.3, pointRadius: 2
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
+            });
+
+            // Error Pie Chart
+            const errorCtx = document.getElementById('errorPieChart').getContext('2d');
+            if(charts.error) charts.error.destroy();
+            const errCounts = {};
+            data.forEach(d => errCounts[d.errorType] = (errCounts[d.errorType] || 0) + 1);
+            charts.error = new Chart(errorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(errCounts),
+                    datasets: [{ data: Object.values(errCounts), backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#6366f1'] }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } } }
+            });
+
+            // Team Bar Chart
+            const teamCtx = document.getElementById('teamBarChart').getContext('2d');
+            if(charts.team) charts.team.destroy();
+            const teamStats = {};
+            data.forEach(d => {
+                if(!teamStats[d.team]) teamStats[d.team] = { sum: 0, count: 0 };
+                teamStats[d.team].sum += d.score;
+                teamStats[d.team].count++;
+            });
+            charts.team = new Chart(teamCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(teamStats),
+                    datasets: [{
+                        data: Object.keys(teamStats).map(k => teamStats[k].sum / teamStats[k].count),
+                        backgroundColor: '#6366f1', borderRadius: 5
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function updateRankings(data) {
+            const sorted = [...new Map(data.map(item => [item.mt, item])).values()]
+                .sort((a,b) => b.score - a.score).slice(0, 5);
+            
+            document.getElementById('ranking-list').innerHTML = sorted.map((m, i) => `
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-slate-500">#${i+1}</span>
+                        <div><p class="text-xs font-bold">${m.mt}</p><p class="text-[9px] text-slate-500">${m.team}</p></div>
+                    </div>
+                    <span class="text-sm font-black ${m.score >= 90 ? 'text-emerald-400' : 'text-blue-400'}">%${Math.round(m.score)}</span>
+                </div>
+            `).join('');
+        }
+
+        // YARDIMCI FONKSİYONLAR
         function findField(row, targets) {
             const keys = Object.keys(row);
             for (let t of targets) {
@@ -135,146 +285,34 @@
             return null;
         }
 
-        // EXCEL YÜKLEME
-        document.getElementById('excel-input').addEventListener('change', function(e) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-
-                // Veriyi standardize etme
-                rawData = json.map(row => ({
-                    score: parseFloat(findField(row, ["puan", "skor", "score", "formpuan"])) || 0,
-                    mt: findField(row, ["temsilci", "personel", "mt", "ad", "user"]) || "Bilinmiyor",
-                    team: findField(row, ["takım", "vardiya", "team", "grup"]) || "Genel",
-                    loc: findField(row, ["lokasyon", "şehir", "bölge", "location"]) || "Merkez",
-                    error: findField(row, ["açıklama", "hata", "detay", "error", "not"]) || "",
-                    date: findField(row, ["tarih", "date", "zaman"]) || ""
-                }));
-
-                if (rawData.length > 0) {
-                    initFilters();
-                    renderAll();
-                    if(window.innerWidth < 768) toggleSidebar();
-                } else {
-                    alert("Veri okunamadı. Lütfen sütun başlıklarını kontrol edin.");
-                }
-            };
-            reader.readAsArrayBuffer(e.target.files[0]);
-        });
-
-        function initFilters() {
-            const locs = [...new Set(rawData.map(d => d.loc))].sort();
-            const teams = [...new Set(rawData.map(d => d.team))].sort();
-            
-            renderSlicer('loc-filters', locs, 'loc');
-            renderSlicer('team-filters', teams, 'team');
+        function parseExcelDate(val) {
+            if(!val) return new Date();
+            if(typeof val === 'number') return new Date((val - 25569) * 86400 * 1000);
+            return new Date(val);
         }
 
-        function renderSlicer(id, items, key) {
-            const container = document.getElementById(id);
-            container.innerHTML = `<button onclick="applyFilter('${key}', null)" class="slicer-btn ${!activeFilters[key] ? 'active' : ''} px-3 py-1.5 rounded-lg text-[10px] font-bold bg-slate-900">HEPSİ</button>`;
-            items.forEach(item => {
-                container.innerHTML += `<button onclick="applyFilter('${key}', '${item}')" class="slicer-btn ${activeFilters[key] === item ? 'active' : ''} px-3 py-1.5 rounded-lg text-[10px] font-bold bg-slate-900">${item}</button>`;
-            });
+        function toggleShare() {
+            const modal = document.getElementById('share-modal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
         }
 
-        window.applyFilter = (key, val) => {
-            activeFilters[key] = val;
-            initFilters();
-            renderAll();
-        };
-
-        function renderAll() {
-            const filtered = rawData.filter(d => 
-                (!activeFilters.loc || d.loc === activeFilters.loc) && 
-                (!activeFilters.team || d.team === activeFilters.team)
-            );
-
-            // KPI Hesapla
-            const avg = Math.round(filtered.reduce((a, b) => a + b.score, 0) / filtered.length) || 0;
-            document.getElementById('kpi-avg').innerText = "%" + avg;
-            document.getElementById('kpi-count').innerText = filtered.length;
-            document.getElementById('kpi-critical').innerText = filtered.filter(d => d.score < 80).length;
-            
-            // En İyi Bölgeyi Bul
-            const locScores = {};
-            filtered.forEach(d => { locScores[d.loc] = (locScores[d.loc] || 0) + d.score; });
-            const best = Object.keys(locScores).sort((a,b) => locScores[b] - locScores[a])[0];
-            document.getElementById('kpi-best').innerText = best || "-";
-
-            renderCharts(filtered);
-            renderRankings(filtered);
-            renderErrors(filtered);
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert("Analiz bağlantısı kopyalandı!");
         }
 
-        function renderCharts(data) {
-            // Trend Chart
-            const ctx1 = document.getElementById('chart-trend').getContext('2d');
-            if(charts.trend) charts.trend.destroy();
-            charts.trend = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: data.slice(-15).map(d => d.date.toString().substring(0,10)),
-                    datasets: [{
-                        data: data.slice(-15).map(d => d.score),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true, tension: 0.4
-                    }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-
-            // Team Chart
-            const ctx2 = document.getElementById('chart-team').getContext('2d');
-            if(charts.team) charts.team.destroy();
-            const teamData = {};
-            data.forEach(d => { teamData[d.team] = (teamData[d.team] || 0) + d.score; });
-            charts.team = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(teamData),
-                    datasets: [{ data: Object.values(teamData).map(v => v/data.length), backgroundColor: '#6366f1', borderRadius: 10 }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        function renderRankings(data) {
-            const sorted = [...data].sort((a,b) => b.score - a.score).slice(0, 5);
-            document.getElementById('mt-ranking').innerHTML = sorted.map(m => `
-                <div class="flex justify-between items-center p-4 bg-slate-900/40 rounded-2xl border border-slate-800">
-                    <span class="text-xs font-bold">${m.mt} <br><small class="text-slate-500">${m.team}</small></span>
-                    <span class="text-sm font-black text-emerald-400">%${m.score}</span>
-                </div>
-            `).join('');
-        }
-
-        function renderErrors(data) {
-            const keywords = {"Bilgi": ["bilgi", "eksik"], "Üslup": ["üslup", "nezaket"], "Süreç": ["prosedür", "kayıt"]};
-            const counts = {};
-            data.forEach(d => {
-                const txt = d.error.toLowerCase();
-                for(let k in keywords) if(keywords[k].some(w => txt.includes(w))) counts[k] = (counts[k] || 0) + 1;
-            });
-            document.getElementById('error-list').innerHTML = Object.entries(counts).map(([k, v]) => `
-                <div class="space-y-1">
-                    <div class="flex justify-between text-[10px] font-bold"><span class="text-slate-400">${k}</span><span class="text-red-500">${v} Adet</span></div>
-                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div class="bg-blue-600 h-full" style="width: ${(v/data.length)*100}%"></div>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-xs text-slate-600 italic">Hata verisi bulunamadı.</p>';
-        }
-
-        function exportToExcel() {
-            if(!rawData.length) return;
+        function exportData() {
+            if(!rawData.length) return alert("Dışa aktaracak veri yok!");
             const ws = XLSX.utils.json_to_sheet(rawData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Estel_Analiz_Sonuc");
-            XLSX.writeFile(wb, "Estel_Analiz_Raporu.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Analiz");
+            XLSX.writeFile(wb, "Estel_Pro_Rapor.xlsx");
+        }
+
+        function switchSource(src) {
+            document.getElementById('src-excel').classList.toggle('active', src === 'excel');
+            document.getElementById('src-sql').classList.toggle('active', src === 'sql');
+            if(src === 'sql') alert("SQL Server Gateway yapılandırması bekleniyor...");
         }
     </script>
 </body>
