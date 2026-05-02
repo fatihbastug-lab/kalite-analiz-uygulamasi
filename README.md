@@ -1,0 +1,1 @@
+# kalite-analiz-uygulamasi
