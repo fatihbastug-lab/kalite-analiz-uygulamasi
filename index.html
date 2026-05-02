@@ -3,210 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalite İstihbarat Merkezi | Yönetici Paneli</title>
+    <title>Enterprise Analytics | Multi-Format Support</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .sidebar { transition: all 0.3s; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .drop-zone--over { border-color: #3b82f6; background-color: #eff6ff; }
     </style>
 </head>
-<body class="bg-slate-50 flex min-h-screen overflow-hidden">
+<body class="bg-[#fcfdfe] flex h-screen overflow-hidden">
 
-    <aside class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col">
-        <div class="p-6">
-            <h2 class="text-2xl font-black tracking-tighter text-blue-400">KALİTE.AI</h2>
-            <p class="text-xs text-slate-400 uppercase tracking-widest mt-1 font-bold">Yönetim Paneli v2</p>
+    <aside class="w-80 bg-[#0f172a] text-white flex flex-col border-r border-slate-800 shadow-2xl">
+        <div class="p-8">
+            <div class="flex items-center space-x-3 mb-2">
+                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold">Q</div>
+                <h1 class="text-xl font-extrabold tracking-tight">QUALITY INSIGHT</h1>
+            </div>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1">Multi-Format Analyzer</p>
         </div>
-        <nav class="flex-1 px-4 space-y-2 mt-4">
-            <a href="#" class="flex items-center p-3 bg-blue-600 rounded-xl text-white font-semibold shadow-lg shadow-blue-900/20">📊 Genel Bakış</a>
-            <a href="#" class="flex items-center p-3 text-slate-400 hover:bg-slate-800 rounded-xl transition">📍 Lokasyonlar</a>
-            <a href="#" class="flex items-center p-3 text-slate-400 hover:bg-slate-800 rounded-xl transition">👥 Takım Skorları</a>
-            <a href="#" class="flex items-center p-3 text-slate-400 hover:bg-slate-800 rounded-xl transition">⚠️ Risk Analizi</a>
+
+        <div class="px-6 mt-4">
+            <div id="dropZone" class="border-2 border-dashed border-slate-700 rounded-2xl p-6 text-center hover:border-blue-500 transition-all cursor-pointer group bg-slate-900/50">
+                <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv">
+                <div class="mb-3 text-2xl group-hover:scale-110 transition-transform">📄</div>
+                <p class="text-sm font-semibold text-slate-300">Raporu Sürükleyin</p>
+                <p class="text-[10px] text-slate-500 mt-2">XLSX, XLS veya CSV desteği</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-6 mt-10 space-y-2">
+            <div class="text-slate-600 text-[10px] font-bold uppercase mb-4 tracking-widest">Dashboards</div>
+            <div class="flex items-center space-x-3 p-3 bg-blue-600 rounded-xl font-bold text-sm shadow-lg shadow-blue-900/40">
+                <span>🏠</span> <span>Yönetici Özeti</span>
+            </div>
+            <div class="flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-800 rounded-xl transition text-sm">
+                <span>📊</span> <span>Trend Analizi</span>
+            </div>
         </nav>
-        <div class="p-6 border-t border-slate-800">
-            <input type="file" id="fileInput" class="hidden" accept=".xlsx, .csv">
-            <button onclick="document.getElementById('fileInput').click()" class="w-full bg-slate-800 hover:bg-blue-600 border border-slate-700 p-3 rounded-xl transition font-bold text-sm">
-                Yeni Veri Yükle
-            </button>
-        </div>
     </aside>
 
-    <main class="flex-1 flex flex-col overflow-y-auto">
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10 glass">
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10">
+            <div id="fileInfo" class="text-slate-400 font-medium text-sm italic">Henüz bir dosya işlenmedi...</div>
             <div class="flex items-center space-x-4">
-                <span id="lastUpdate" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Veri Bekleniyor...</span>
-            </div>
-            <div class="flex items-center space-x-4 text-sm font-semibold text-slate-600">
-                <span id="fileNameDisplay" class="bg-slate-100 px-3 py-1 rounded-full text-xs italic">Dosya Seçilmedi</span>
-                <div class="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 font-bold">Y</div>
+                <div class="text-right">
+                    <p class="text-xs font-bold text-slate-900">Yönetici Paneli</p>
+                    <p class="text-[10px] text-green-500 font-bold">SİSTEM AKTİF</p>
+                </div>
+                <div class="w-10 h-10 bg-slate-100 rounded-full border border-slate-200"></div>
             </div>
         </header>
 
-        <div id="content" class="p-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Kurumsal Başarı Skoru</p>
-                    <div class="flex items-end space-x-2">
-                        <span id="mainScore" class="text-4xl font-black text-slate-800">%0</span>
-                        <span id="scoreTrend" class="text-sm font-bold mb-1">-</span>
-                    </div>
+        <div id="dashboardContent" class="flex-1 overflow-y-auto p-10 space-y-8 opacity-50 pointer-events-none transition-opacity">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <p class="text-slate-400 text-[10px] font-black uppercase mb-1">Genel Skor</p>
+                    <h2 id="kpiScore" class="text-4xl font-black text-blue-600">%0</h2>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Kritik Uygunsuzluk</p>
-                    <span id="totalFails" class="text-4xl font-black text-red-600">0</span>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <p class="text-slate-400 text-[10px] font-black uppercase mb-1">Toplam Çağrı</p>
+                    <h2 id="kpiTotal" class="text-4xl font-black text-slate-800">0</h2>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">En Başarılı Lokasyon</p>
-                    <span id="bestLocation" class="text-xl font-extrabold text-green-600 mt-2 block">-</span>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <p class="text-slate-400 text-[10px] font-black uppercase mb-1">Erzurum Skor</p>
+                    <h2 id="kpiErzurum" class="text-4xl font-black text-indigo-600">%0</h2>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Aktif Denetim</p>
-                    <span id="totalCheckpoints" class="text-4xl font-black text-blue-600">0</span>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <p class="text-slate-400 text-[10px] font-black uppercase mb-1">Kritik Hata</p>
+                    <h2 id="kpiFails" class="text-4xl font-black text-red-500">0</h2>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                <div class="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-bold text-slate-800 mb-6">Takım Bazlı Performans Karşılaştırması</h3>
-                    <canvas id="teamChart" height="120"></canvas>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-6">Takım Bazlı Performans</h3>
+                    <canvas id="teamChart" height="150"></canvas>
                 </div>
-                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-bold text-slate-800 mb-6 font-semibold">⚠️ Top 5 Hata Odağı</h3>
-                    <div id="topErrorsList" class="space-y-4">
-                        <p class="text-slate-400 italic text-sm">Veri yüklendiğinde analiz edilecek...</p>
-                    </div>
+                <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-6">En Düşük Skorlu 5 Personel</h3>
+                    <div id="worstAgents" class="space-y-3"></div>
                 </div>
-            </div>
-
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800">Detaylı Denetim Kayıtları</h3>
-                    <button class="text-blue-600 text-sm font-bold hover:underline">Excel Olarak Dışa Aktar</button>
-                </div>
-                <div id="tableContainer" class="overflow-x-auto max-h-96"></div>
             </div>
         </div>
     </main>
 
     <script>
-        let charts = {};
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            document.getElementById('fileNameDisplay').innerText = file.name;
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        let teamChart;
+
+        // Tıklama ve Sürükle-Bırak Olayları
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('drop-zone--over');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drop-zone--over');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        };
+
+        fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+        function handleFile(file) {
+            document.getElementById('fileInfo').innerText = `İşleniyor: ${file.name}`;
             const reader = new FileReader();
-            reader.onload = (event) => {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                processFullAnalysis(json);
+            
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    if(json.length > 0) startAnalysis(json);
+                    else alert("Dosya boş görünüyor!");
+                } catch (err) {
+                    alert("Dosya okunamadı! Lütfen Excel veya CSV yükleyin.");
+                }
             };
             reader.readAsArrayBuffer(file);
-        });
-
-        function processFullAnalysis(data) {
-            // 1. GENEL VERİLER
-            let ok = 0, nok = 0;
-            const teams = {};
-            const locations = {};
-            const errors = {};
-
-            data.forEach(row => {
-                const status = (row.Durum || row.Sonuç || "").toString().toLowerCase();
-                const isOk = status.includes("uygun") && !status.includes("değil");
-                
-                if(isOk) ok++; else nok++;
-
-                // Takım Analizi
-                const tName = row.Takım || row.Vardiya || "Genel";
-                if(!teams[tName]) teams[tName] = {ok: 0, total: 0};
-                teams[tName].total++;
-                if(isOk) teams[tName].ok++;
-
-                // Lokasyon Analizi
-                const lName = row.Lokasyon || row.Bölge || "Merkez";
-                if(!locations[lName]) locations[lName] = {ok: 0, total: 0};
-                locations[lName].total++;
-                if(isOk) locations[lName].ok++;
-
-                // Hata Analizi
-                if(!isOk) {
-                    const eType = row.Hata_Tipi || row.Kategori || row.Açıklama || "Tanımsız";
-                    errors[eType] = (errors[eType] || 0) + 1;
-                }
-            });
-
-            // 2. UI GÜNCELLEME
-            const score = Math.round((ok / (ok+nok)) * 100);
-            document.getElementById('mainScore').innerText = "%" + score;
-            document.getElementById('totalFails').innerText = nok;
-            document.getElementById('totalCheckpoints').innerText = data.length;
-            document.getElementById('lastUpdate').innerText = "SON GÜNCELLEME: " + new Date().toLocaleTimeString();
-
-            // En Başarılı Lokasyon
-            const bestLoc = Object.entries(locations).sort((a,b) => (b[1].ok/b[1].total) - (a[1].ok/a[1].total))[0];
-            document.getElementById('bestLocation').innerText = bestLoc ? bestLoc[0] : "-";
-
-            // 3. TAKIM GRAFİĞİ
-            updateTeamChart(teams);
-
-            // 4. TOP 5 HATA
-            updateErrorList(errors);
-
-            // 5. TABLO
-            renderTable(data);
         }
 
-        function updateTeamChart(teams) {
-            const ctx = document.getElementById('teamChart').getContext('2d');
-            if(charts.team) charts.team.destroy();
+        function startAnalysis(data) {
+            document.getElementById('dashboardContent').classList.remove('opacity-50', 'pointer-events-none');
             
-            charts.team = new Chart(ctx, {
+            let totalScore = 0, erzurumSum = 0, erzurumCount = 0, fails = 0;
+            const teams = {}, agents = {};
+
+            data.forEach(row => {
+                const score = parseFloat(row["Form Puan"] || 0);
+                const team = row["Takım Adı"] || "Diğer";
+                const loc = row["Grup Adı"] || "";
+                const agent = row["Personel"] || "Bilinmiyor";
+
+                totalScore += score;
+                if(score < 80) fails++;
+
+                // Erzurum Özel Analizi
+                if(loc.includes("ERZURUM")) {
+                    erzurumSum += score; erzurumCount++;
+                }
+
+                // Takım Verisi
+                if(!teams[team]) teams[team] = {sum: 0, count: 0};
+                teams[team].sum += score; teams[team].count++;
+
+                // Personel Verisi
+                if(!agents[agent]) agents[agent] = {sum: 0, count: 0};
+                agents[agent].sum += score; agents[agent].count++;
+            });
+
+            // KPI'ları Yaz
+            document.getElementById('kpiScore').innerText = "%" + Math.round(totalScore/data.length);
+            document.getElementById('kpiTotal').innerText = data.length;
+            document.getElementById('kpiFails').innerText = fails;
+            document.getElementById('kpiErzurum').innerText = erzurumCount > 0 ? "%" + Math.round(erzurumSum/erzurumCount) : "-";
+
+            // Grafik Çiz
+            updateChart(teams);
+            
+            // En Kötü 5 Personel
+            const sortedAgents = Object.entries(agents)
+                .map(([name, s]) => ({name, avg: Math.round(s.sum/s.count)}))
+                .sort((a,b) => a.avg - b.avg).slice(0, 5);
+            
+            document.getElementById('worstAgents').innerHTML = sortedAgents.map(a => `
+                <div class="flex justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="font-bold text-sm text-slate-700">${a.name}</span>
+                    <span class="text-red-500 font-black">%${a.avg}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateChart(teams) {
+            const ctx = document.getElementById('teamChart').getContext('2d');
+            if(teamChart) teamChart.destroy();
+            teamChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(teams),
                     datasets: [{
-                        label: 'Başarı Oranı (%)',
-                        data: Object.values(teams).map(t => Math.round((t.ok/t.total)*100)),
+                        label: 'Skor',
+                        data: Object.values(teams).map(t => Math.round(t.sum/t.count)),
                         backgroundColor: '#3b82f6',
                         borderRadius: 10
                     }]
                 },
-                options: { 
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, max: 100 } }
-                }
+                options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
             });
-        }
-
-        function updateErrorList(errors) {
-            const sorted = Object.entries(errors).sort((a,b) => b[1]-a[1]).slice(0, 5);
-            const container = document.getElementById('topErrorsList');
-            container.innerHTML = sorted.map(([name, count]) => `
-                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span class="text-sm font-semibold text-slate-700">${name}</span>
-                    <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-black">${count} Adet</span>
-                </div>
-            `).join('') || '<p class="text-green-600 font-bold">Harika! Hiç hata bulunamadı.</p>';
-        }
-
-        function renderTable(data) {
-            let html = `<table class="w-full text-sm text-left">
-                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-black tracking-widest border-b border-slate-100">
-                    <tr>${Object.keys(data[0]).map(k => `<th class="px-6 py-4">${k}</th>`).join('')}</tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    ${data.slice(0, 20).map(row => `
-                        <tr class="hover:bg-blue-50/30 transition">
-                            ${Object.values(row).map(v => `<td class="px-6 py-4 text-slate-600">${v}</td>`).join('')}
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>`;
-            document.getElementById('tableContainer').innerHTML = html;
         }
     </script>
 </body>
