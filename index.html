@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESTEL ANALİZ | Verinin Ötesinde</title>
+    <title>ESTEL ANALİZ | Veri Analitik Paneli</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,8 +12,6 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #05070a; color: #e2e8f0; }
         .glass-card { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.03); }
         .slicer-btn.active { background-color: #2563eb; color: white; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
-        .trend-up { color: #10b981; }
-        .trend-down { color: #ef4444; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
@@ -23,86 +21,69 @@
     <aside class="w-72 flex flex-col border-r border-slate-900 p-6 space-y-8 bg-[#080b14]">
         <div>
             <h1 class="text-3xl font-extrabold tracking-tighter bg-gradient-to-r from-blue-500 to-indigo-400 bg-clip-text text-transparent">ESTEL</h1>
-            <p class="text-[10px] font-bold text-slate-600 tracking-[0.4em] uppercase">Analiz & İstihbarat</p>
+            <p class="text-[10px] font-bold text-slate-600 tracking-[0.4em] uppercase">Analiz Paneli</p>
         </div>
 
         <div id="slicerSection" class="space-y-6 hidden flex-1 overflow-y-auto">
             <div>
-                <label class="text-[10px] font-black text-slate-700 uppercase mb-3 block">Lokasyon Filtresi</label>
+                <label class="text-[10px] font-black text-slate-700 uppercase mb-3 block">Lokasyon / Grup</label>
                 <div id="locSlicer" class="flex flex-wrap gap-2"></div>
             </div>
             <div>
                 <label class="text-[10px] font-black text-slate-700 uppercase mb-3 block">Takım Filtresi</label>
-                <div id="teamSlicer" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1"></div>
+                <div id="teamSlicer" class="flex flex-wrap gap-2 max-h-64 overflow-y-auto pr-1"></div>
             </div>
         </div>
 
         <div class="mt-auto space-y-4">
-            <div class="p-4 rounded-2xl bg-blue-900/10 border border-blue-900/20">
-                <p class="text-[9px] text-blue-400 font-bold mb-1 uppercase">Güvenlik Durumu</p>
-                <p class="text-[10px] text-slate-500">KVKK Maskeleme Aktif. Veri Yerel İşleniyor.</p>
-            </div>
             <input type="file" id="fileInput" class="hidden" accept=".xlsx, .csv">
             <button onclick="document.getElementById('fileInput').click()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center space-x-2">
-                <span>📂</span> <span>VERİ YÜKLE</span>
+                <span>📂</span> <span>ANALİZ DOSYASI YÜKLE</span>
             </button>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-transparent to-transparent">
+    <main class="flex-1 flex flex-col overflow-hidden">
         <header class="h-20 flex items-center justify-between px-10 border-b border-slate-900 bg-slate-950/30">
-            <div id="statusInfo" class="text-xs text-slate-500 font-medium">ESTEL Analiz Modülü Hazır...</div>
+            <div id="statusInfo" class="text-xs text-slate-500 font-medium">Veri yüklenmesi bekleniyor...</div>
             <div class="flex items-center space-x-4">
                 <div class="text-right">
-                    <p class="text-xs font-bold text-slate-400">Kurumsal Profil</p>
-                    <p class="text-[9px] text-blue-500 font-black tracking-widest uppercase">Premium Erişim</p>
+                    <p class="text-xs font-bold text-slate-400">Yönetici Paneli</p>
+                    <p class="text-[9px] text-blue-500 font-black tracking-widest uppercase">Canlı Veri Modu</p>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center font-bold text-blue-500">EA</div>
             </div>
         </header>
 
-        <div id="dashboard" class="flex-1 overflow-y-auto p-10 space-y-8 opacity-10 transition-all duration-1000">
+        <div id="dashboard" class="flex-1 overflow-y-auto p-10 space-y-8 opacity-10 transition-all duration-700">
             
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="glass-card p-6 rounded-[2rem] relative overflow-hidden">
-                    <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Global Başarı</p>
-                    <h2 id="kpiScore" class="text-4xl font-black text-white">%0</h2>
-                    <div id="kpiTrend" class="text-[10px] mt-2 font-bold">Analiz Bekleniyor</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card p-6 rounded-[2rem]">
+                    <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Genel Başarı Ortalaması</p>
+                    <h2 id="kpiScore" class="text-5xl font-black text-white">%0</h2>
                 </div>
                 <div class="glass-card p-6 rounded-[2rem]">
-                    <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Tahmini Risk</p>
-                    <h2 id="kpiRisk" class="text-4xl font-black text-red-500">%0</h2>
-                    <div class="text-[10px] text-slate-600 mt-2 font-bold italic">Gelecek Ay Projeksiyonu</div>
+                    <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Toplam Değerlendirme</p>
+                    <h2 id="kpiTotal" class="text-5xl font-black text-blue-400">0</h2>
                 </div>
-                <div class="glass-card p-6 rounded-[2rem]">
-                    <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Toplam Analiz</p>
-                    <h2 id="kpiTotal" class="text-4xl font-black text-blue-400">0</h2>
-                </div>
-                <div class="glass-card p-6 rounded-[2rem] border-l-4 border-l-indigo-600">
-                    <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Akıllı İstihbarat</p>
-                    <div id="aiSummary" class="text-[11px] text-slate-400 mt-2 leading-relaxed">Veri bekleniyor...</div>
+                <div class="glass-card p-6 rounded-[2rem] border-l-4 border-l-red-600">
+                    <p class="text-slate-500 text-[10px] font-black uppercase mb-1">80 Puan Altı Kayıtlar</p>
+                    <h2 id="kpiCritical" class="text-5xl font-black text-white">0</h2>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2 glass-card p-8 rounded-[2.5rem]">
-                    <div class="flex justify-between items-center mb-8">
-                        <h3 class="font-bold text-slate-300 text-sm italic">📈 Performans Trendi ve Gelecek Tahmini</h3>
-                        <span class="text-[10px] bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full border border-blue-900/50">Linear Regression Aktif</span>
-                    </div>
-                    <canvas id="mainChart" height="130"></canvas>
+                    <h3 class="font-bold text-slate-300 text-sm mb-6 flex items-center">📈 Performans Zaman Trendi</h3>
+                    <canvas id="mainChart" height="120"></canvas>
                 </div>
-                <div class="glass-card p-8 rounded-[2.5rem] flex flex-col">
-                    <h3 class="font-bold text-slate-300 mb-6 text-sm italic">🚫 Kritik Hata Odakları</h3>
-                    <div id="errorAnalysis" class="space-y-4 flex-1"></div>
-                    <div class="mt-6 p-4 rounded-xl bg-indigo-900/10 border border-indigo-900/20 text-[10px] text-indigo-300 italic">
-                        *AI Notu: Hataların yoğunlaştığı alanlar otomatik olarak önceliklendirilmiştir.
-                    </div>
+                <div class="glass-card p-8 rounded-[2.5rem]">
+                    <h3 class="font-bold text-slate-300 mb-6 text-sm">🚫 Açıklama Odaklı Hata Analizi</h3>
+                    <div id="errorAnalysis" class="space-y-4"></div>
                 </div>
             </div>
 
             <div class="glass-card p-8 rounded-[2.5rem]">
-                <h3 class="font-bold text-slate-300 mb-6 text-sm italic">👥 Anonimleştirilmiş Takım Benchmarkları</h3>
+                <h3 class="font-bold text-slate-300 mb-6 text-sm">👥 Gruplara Göre Puan Dağılımı</h3>
                 <canvas id="teamChart" height="80"></canvas>
             </div>
         </div>
@@ -110,24 +91,19 @@
 
     <script>
         let rawData = [], filteredData = [], charts = {}, activeFilters = { loc: null, team: null };
-        let teamMap = {}, locMap = {}, counter = 1;
-
-        // KVKK MASKALEME FONKSİYONLARI
-        const maskTeam = (name) => { if(!teamMap[name]) teamMap[name] = `T-${counter++}`; return teamMap[name]; };
-        const maskLoc = (name) => { if(!locMap[name]) locMap[name] = `Bölge-${String.fromCharCode(64 + counter)}`; return locMap[name]; };
 
         document.getElementById('fileInput').addEventListener('change', (e) => {
             const reader = new FileReader();
             reader.onload = (event) => {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                const workbook = XLSX.read(new Uint8Array(event.target.result), {type: 'array'});
+                const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 
-                rawData = json.map(row => ({
-                    ...row,
-                    "Takım Adı": maskTeam(row["Takım Adı"] || row["Vardiya"]),
-                    "Grup Adı": maskLoc(row["Grup Adı"] || row["Lokasyon"]),
-                    "Skor": parseFloat(row["Form Puan"]) || 0
+                // Veriyi olduğu gibi alıyoruz (Değiştirme/Maskeleme Yok)
+                rawData = data.map(d => ({
+                    ...d,
+                    "Puan": parseFloat(d["Form Puan"]) || 0,
+                    "Grup": d["Grup Adı"] || d["Lokasyon"] || "Belirtilmemiş",
+                    "Takım": d["Takım Adı"] || d["Vardiya"] || "Belirtilmemiş"
                 }));
 
                 document.getElementById('dashboard').style.opacity = "1";
@@ -139,8 +115,8 @@
         });
 
         function initSlicers() {
-            const locs = [...new Set(rawData.map(d => d["Grup Adı"]))].filter(Boolean);
-            const teams = [...new Set(rawData.map(d => d["Takım Adı"]))].filter(Boolean);
+            const locs = [...new Set(rawData.map(d => d["Grup"]))].sort();
+            const teams = [...new Set(rawData.map(d => d["Takım"]))].sort();
             renderSlicer('locSlicer', locs, 'loc');
             renderSlicer('teamSlicer', teams, 'team');
         }
@@ -148,97 +124,100 @@
         function renderSlicer(id, items, key) {
             const el = document.getElementById(id);
             el.innerHTML = `<button class="slicer-btn px-2 py-1 text-[9px] font-bold border border-slate-800 rounded-lg bg-slate-900 active" onclick="setFilter('${key}', null)">HEPSİ</button>`;
-            items.forEach(i => el.innerHTML += `<button class="slicer-btn px-2 py-1 text-[9px] font-bold border border-slate-800 rounded-lg bg-slate-900" onclick="setFilter('${key}', '${i}')">${i}</button>`);
+            items.forEach(i => {
+                el.innerHTML += `<button class="slicer-btn px-2 py-1 text-[9px] font-bold border border-slate-800 rounded-lg bg-slate-900" onclick="setFilter('${key}', '${i}')">${i}</button>`;
+            });
         }
 
         window.setFilter = (key, val) => {
             activeFilters[key] = val;
             updateDashboard();
-            const container = document.querySelector(`[onclick*="${key}"]`).parentElement;
+            const container = document.getElementById(key + 'Slicer');
             container.querySelectorAll('.slicer-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if((val === null && btn.innerText === "HEPSİ") || btn.innerText === val) btn.classList.add('active');
+                btn.classList.toggle('active', (val === null && btn.innerText === "HEPSİ") || btn.innerText === val);
             });
         };
 
         function updateDashboard() {
-            filteredData = rawData.filter(d => (!activeFilters.loc || d["Grup Adı"] === activeFilters.loc) && (!activeFilters.team || d["Takım Adı"] === activeFilters.team));
+            filteredData = rawData.filter(d => 
+                (!activeFilters.loc || d["Grup"] === activeFilters.loc) && 
+                (!activeFilters.team || d["Takım"] === activeFilters.team)
+            );
             
-            const scores = filteredData.map(d => d.Skor);
-            const avg = Math.round(scores.reduce((a,b)=>a+b, 0) / (scores.length || 1));
-            
+            const scores = filteredData.map(d => d.Puan);
+            const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b, 0) / scores.length) : 0;
+            const criticals = filteredData.filter(d => d.Puan < 80).length;
+
             document.getElementById('kpiScore').innerText = "%" + avg;
             document.getElementById('kpiTotal').innerText = filteredData.length;
-            document.getElementById('kpiRisk').innerText = "%" + (100 - avg + 5); // Basit risk projeksiyonu
-            document.getElementById('statusInfo').innerText = `ESTEL ANALİZ: ${filteredData.length} Kayıt İncelendi`;
+            document.getElementById('kpiCritical').innerText = criticals;
+            document.getElementById('statusInfo').innerText = `ESTEL ANALİZ: ${filteredData.length} Satır Veri İşlendi`;
 
-            // Akıllı Özet
-            document.getElementById('aiSummary').innerHTML = avg > 85 ? "Performans ideal seviyede. Gelecek ay için %2'lik bir artış öngörülüyor." : "Ortalama skor kritik sınırda. Eğitim planlaması önerilir.";
-
-            renderMainChart();
-            renderErrorAnalysis();
-            renderTeamChart();
+            renderCharts();
+            analyzeDescriptions();
         }
 
-        function renderMainChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
+        function renderCharts() {
+            // Trend Chart
+            const tCtx = document.getElementById('mainChart').getContext('2d');
             if(charts.main) charts.main.destroy();
-
-            const trendData = filteredData.slice(-12).map(d => d.Skor);
-            const labels = filteredData.slice(-12).map(d => (d["Tarih"] || "").slice(5,10));
+            const trendData = filteredData.slice(-15);
             
-            // Basit Tahminleme Çizgisi Ekleme
-            const lastVal = trendData[trendData.length -1];
-            const prediction = lastVal + (lastVal - trendData[0]) / 10;
-
-            charts.main = new Chart(ctx, {
+            charts.main = new Chart(tCtx, {
                 type: 'line',
                 data: {
-                    labels: [...labels, "GELECEK"],
+                    labels: trendData.map(d => (d["Tarih"] || "").toString().slice(0, 10)),
                     datasets: [{
-                        label: 'Skor Trendi',
-                        data: [...trendData, prediction],
+                        label: 'Puan',
+                        data: trendData.map(d => d.Puan),
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         fill: true,
-                        tension: 0.4,
-                        segment: { borderDash: ctx => ctx.p1DataIndex > trendData.length - 1 ? [5, 5] : undefined }
+                        tension: 0.4
                     }]
                 },
-                options: { plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, ticks: { color: '#475569' } } } }
-            });
-        }
-
-        function renderErrorAnalysis() {
-            const keywords = {"Bilgi": ["bilgi", "eksik"], "İletişim": ["üslup", "nezaket"], "Süreç": ["prosedür", "kayıt"]};
-            const counts = {};
-            filteredData.forEach(d => {
-                const desc = (d["Açıklama Detay"] || "").toLowerCase();
-                for(let k in keywords) if(keywords[k].some(w => desc.includes(w))) counts[k] = (counts[k] || 0) + 1;
+                options: { plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
             });
 
-            document.getElementById('errorAnalysis').innerHTML = Object.entries(counts).map(([name, count]) => `
-                <div class="flex justify-between p-4 bg-slate-900/50 rounded-2xl border border-slate-800">
-                    <span class="text-xs font-bold text-slate-400">${name}</span>
-                    <span class="text-xs font-black text-red-500">${count} Kayıt</span>
-                </div>
-            `).join('') || '<p class="text-xs text-slate-600 italic">Kritik hata bulunamadı.</p>';
-        }
-
-        function renderTeamChart() {
-            const ctx = document.getElementById('teamChart').getContext('2d');
+            // Group/Team Chart
+            const bCtx = document.getElementById('teamChart').getContext('2d');
             if(charts.team) charts.team.destroy();
             const groups = {};
-            filteredData.forEach(d => { if(!groups[d["Takım Adı"]]) groups[d["Takım Adı"]] = {s:0, c:0}; groups[d["Takım Adı"]].s += d.Skor; groups[d["Takım Adı"]].c++; });
+            filteredData.forEach(d => {
+                if(!groups[d.Takım]) groups[d.Takım] = {s:0, c:0};
+                groups[d.Takım].s += d.Puan; groups[d.Takım].c++;
+            });
 
-            charts.team = new Chart(ctx, {
+            charts.team = new Chart(bCtx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(groups),
-                    datasets: [{ data: Object.values(groups).map(g => g.s/g.c), backgroundColor: '#6366f1', borderRadius: 10 }]
+                    datasets: [{
+                        data: Object.values(groups).map(g => g.s/g.c),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
                 },
                 options: { plugins: { legend: { display: false } }, scales: { y: { max: 100 } } }
             });
+        }
+
+        function analyzeDescriptions() {
+            const keywords = {"Bilgi Eksikliği": ["bilgi", "eksik", "hatalı"], "İletişim / Üslup": ["üslup", "nezaket", "senli"], "Süreç / Kayıt": ["not", "sistem", "prosedür"]};
+            const counts = {};
+            filteredData.forEach(d => {
+                const desc = (d["Açıklama Detay"] || "").toLowerCase();
+                for(let k in keywords) {
+                    if(keywords[k].some(w => desc.includes(w))) counts[k] = (counts[k] || 0) + 1;
+                }
+            });
+
+            document.getElementById('errorAnalysis').innerHTML = Object.entries(counts).map(([k, v]) => `
+                <div class="flex justify-between p-4 bg-slate-900/50 rounded-2xl border border-slate-800">
+                    <span class="text-xs font-bold text-slate-400">${k}</span>
+                    <span class="text-xs font-black text-red-500">${v} Adet</span>
+                </div>
+            `).join('') || '<p class="text-xs text-slate-600 italic">Veri analizi için metin bulunamadı.</p>';
         }
     </script>
 </body>
