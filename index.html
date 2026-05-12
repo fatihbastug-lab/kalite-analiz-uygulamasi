@@ -2,76 +2,184 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>AI Destekli Kalite & Yorum Analizi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextGen QA Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        .sentiment-positive { color: #27ae60; font-weight: bold; }
-        .sentiment-negative { color: #e74c3c; font-weight: bold; }
-        .sentiment-neutral { color: #f39c12; font-weight: bold; }
-        .keyword-badge { background: #34495e; color: white; padding: 5px 10px; border-radius: 15px; margin: 2px; display: inline-block; font-size: 0.8rem; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        :root {
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+            --text: #f8fafc;
+            --danger: #fb7185;
+            --success: #34d399;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 1.5rem;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar {
+            background: rgba(15, 23, 42, 0.9);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .form-select {
+            background-color: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 10px;
+        }
+
+        .table { color: var(--text); border-color: rgba(255, 255, 255, 0.05); }
+        .table thead { background: rgba(56, 189, 248, 0.1); }
+        
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        #upload-zone {
+            border: 2px dashed rgba(56, 189, 248, 0.5);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #upload-zone:hover { background: rgba(56, 189, 248, 0.05); }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container-fluid p-4">
-    <div class="row mb-4">
-        <div class="col-md-12 text-center">
-            <h2 class="fw-bold">Yapay Zeka Destekli Metin & Kalite Analizi</h2>
-            <p class="text-muted">Excel'deki yorumları analiz ederek kalite skorlarını otomatik belirleyin.</p>
-            <input type="file" id="fileInput" class="btn btn-primary shadow-sm" accept=".xlsx">
-        </div>
-    </div>
-
-    <div id="dashboard" style="display:none">
-        <div class="row g-3">
-            <!-- Sol Panel: Ayarlar ve Filtreler -->
-            <div class="col-md-3">
-                <div class="card p-3 mb-3">
-                    <label class="form-label fw-bold">Yorum Sütunu:</label>
-                    <select id="commentCol" class="form-select mb-3" onchange="performTextAnalysis()"></select>
-                    
-                    <label class="form-label fw-bold">Kategori Sütunu (Opsiyonel):</label>
-                    <select id="categoryCol" class="form-select mb-3" onchange="performTextAnalysis()"></select>
-                </div>
-
-                <div class="card p-3">
-                    <h6 class="fw-bold mb-3">Sık Geçen Kritik Kelimeler</h6>
-                    <div id="keywordCloud"></div>
-                </div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 sidebar d-none d-md-block">
+            <h3 class="fw-800 mb-5" style="letter-spacing: -1px;">QA<span style="color:var(--accent)">CORE</span></h3>
+            
+            <div id="upload-zone" class="mb-4">
+                <input type="file" id="excelInput" hidden>
+                <div class="small text-muted">DOSYAYI YÜKLE</div>
             </div>
 
-            <!-- Sağ Panel: Analiz Sonuçları -->
-            <div class="col-md-9">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-4">
-                        <div class="card p-3 text-center bg-white">
-                            <div class="text-muted small">Genel Duygu Puanı</div>
-                            <div class="h2 mb-0" id="avgSentiment">%0</div>
+            <div id="filterArea" style="display:none">
+                <label class="small text-muted mb-2">GRUP ANALİZİ</label>
+                <select id="grupSelect" class="form-select mb-4" onchange="updateDash()"></select>
+                
+                <label class="small text-muted mb-2">TAKIM LİDERİ</label>
+                <select id="takimSelect" class="form-select mb-4" onchange="updateDash()"></select>
+            </div>
+        </div>
+
+        <div class="col-md-10 p-4">
+            <div id="welcome" class="text-center py-5">
+                <h1 class="display-3 fw-800">Veriyi Görselleştirin.</h1>
+                <p class="text-muted lead">Lütfen analize başlamak için Excel dosyasını sol tarafa sürükleyin.</p>
+            </div>
+
+            <div id="dash" style="display:none">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="glass-card">
+                            <div class="small text-muted">ORTALAMA SCORE</div>
+                            <div class="kpi-value" id="avgScore">0</div>
+                            <div id="scoreTrend" class="small mt-2"></div>
                         </div>
                     </div>
-                    <div class="col-md-8">
-                        <div class="card p-3 bg-white">
-                            <canvas id="sentimentChart" height="80"></canvas>
+                    <div class="col-md-3">
+                        <div class="glass-card">
+                            <div class="small text-muted">TOPLAM ANALİZ</div>
+                            <div class="kpi-value" id="totalCalls">0</div>
+                            <div class="small text-info mt-2">Aktif Periyot</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="glass-card">
+                            <div class="small text-muted">EN SIK HATA SEBEPLERİ</div>
+                            <div id="errorCloud" class="mt-2 d-flex flex-wrap gap-2"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="card p-3">
-                    <h5 class="fw-bold mb-3">AI Yorum Analiz Listesi</h5>
-                    <div class="table-responsive" style="max-height: 500px;">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-dark">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-8">
+                        <div class="glass-card">
+                            <h5 class="mb-4 fw-bold">Takım Performans Matrisi</h5>
+                            <canvas id="performanceChart" height="150"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="glass-card">
+                            <h5 class="mb-4 fw-bold">Duygu Dağılımı</h5>
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <h5 class="mb-4 fw-bold">Detaylı İnceleme Kayıtları</h5>
+                    <div class="table-responsive custom-scroll" style="max-height: 400px;">
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <th>Yorum</th>
-                                    <th>Kategori</th>
-                                    <th>Duygu Analizi</th>
-                                    <th>Skor</th>
+                                    <th>PERSONEL</th>
+                                    <th>LOKASYON</th>
+                                    <th>PUAN</th>
+                                    <th>ANALİST YORUMU</th>
                                 </tr>
                             </thead>
-                            <tbody id="analysisTableBody"></tbody>
+                            <tbody id="tableBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -81,111 +189,100 @@
 </div>
 
 <script>
-let workbookData = [];
-let sentimentChart = null;
+    let db = [];
+    let charts = {};
 
-// Basit Kelime Sözlüğü (Geliştirilebilir)
-const positiveWords = ["iyi", "harika", "başarılı", "hızlı", "kaliteli", "mükemmel", "teşekkür", "memnun"];
-const negativeWords = ["kötü", "yavaş", "hata", "bozuk", "kalitesiz", "yetersiz", "sorun", "eksik", "berbat"];
-
-document.getElementById('fileInput').addEventListener('change', (e) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const wb = XLSX.read(event.target.result, {type: 'binary'});
-        workbookData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        setupSelectors();
+    document.getElementById('upload-zone').onclick = () => document.getElementById('excelInput').click();
+    document.getElementById('excelInput').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const data = new Uint8Array(ev.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            db = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            startApp();
+        };
+        reader.readAsArrayBuffer(e.target.files[0]);
     };
-    reader.readAsBinaryString(e.target.files[0]);
-});
 
-function setupSelectors() {
-    const keys = Object.keys(workbookData[0]);
-    const commentSelect = document.getElementById('commentCol');
-    const catSelect = document.getElementById('categoryCol');
-    
-    commentSelect.innerHTML = keys.map(k => `<option value="${k}">${k}</option>`).join('');
-    catSelect.innerHTML = `<option value="">Seçilmedi</option>` + keys.map(k => `<option value="${k}">${k}</option>`).join('');
-    
-    document.getElementById('dashboard').style.display = 'block';
-    performTextAnalysis();
-}
+    function startApp() {
+        document.getElementById('welcome').style.display = 'none';
+        document.getElementById('dash').style.display = 'block';
+        document.getElementById('filterArea').style.display = 'block';
 
-function analyzeSentiment(text) {
-    if (!text) return { score: 0, label: "Nötr", class: "sentiment-neutral" };
-    text = text.toString().toLowerCase();
-    
-    let score = 0;
-    positiveWords.forEach(w => { if(text.includes(w)) score += 20; });
-    negativeWords.forEach(w => { if(text.includes(w)) score -= 20; });
-    
-    score = Math.max(-100, Math.min(100, score));
-    
-    if (score > 10) return { score, label: "Olumlu", class: "sentiment-positive" };
-    if (score < -10) return { score, label: "Olumsuz", class: "sentiment-negative" };
-    return { score, label: "Nötr", class: "sentiment-neutral" };
-}
+        fillSelect('grupSelect', 'Grup Adı');
+        fillSelect('takimSelect', 'Takım Adı');
+        updateDash();
+    }
 
-function performTextAnalysis() {
-    const commentCol = document.getElementById('commentCol').value;
-    const categoryCol = document.getElementById('categoryCol').value;
-    const tbody = document.getElementById('analysisTableBody');
-    const wordCounts = {};
-    
-    let totalScore = 0;
-    let counts = { Olumlu: 0, Olumsuz: 0, Nötr: 0 };
-    
-    tbody.innerHTML = "";
-    
-    workbookData.forEach(row => {
-        const text = row[commentCol];
-        const sentiment = analyzeSentiment(text);
+    function fillSelect(id, key) {
+        const vals = [...new Set(db.map(x => x[key]))];
+        document.getElementById(id).innerHTML = `<option value="ALL">Tüm Veri</option>` + 
+            vals.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+
+    function updateDash() {
+        const g = document.getElementById('grupSelect').value;
+        const t = document.getElementById('takimSelect').value;
         
-        counts[sentiment.label]++;
-        totalScore += sentiment.score;
+        const filtered = db.filter(x => (g === 'ALL' || x['Grup Adı'] === g) && (t === 'ALL' || x['Takım Adı'] === t));
 
-        // Kelime Sayımı (Word Cloud için)
-        if(text) {
-            text.toString().split(" ").forEach(word => {
-                if(word.length > 3) wordCounts[word] = (wordCounts[word] || 0) + 1;
-            });
-        }
+        // KPI
+        const avg = (filtered.reduce((s, x) => s + (parseFloat(x['Form Puan']) || 0), 0) / filtered.length).toFixed(1);
+        document.getElementById('avgScore').innerText = `%${avg}`;
+        document.getElementById('totalCalls').innerText = filtered.length;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="small">${text || "-"}</td>
-            <td><span class="badge bg-secondary">${row[categoryCol] || "Genel"}</span></td>
-            <td><span class="${sentiment.class}">${sentiment.label}</span></td>
-            <td>${sentiment.score}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+        renderPerformanceChart(filtered);
+        renderTable(filtered);
+        renderKeywords(filtered);
+    }
 
-    updateVisuals(counts, totalScore / workbookData.length, wordCounts);
-}
+    function renderKeywords(data) {
+        const common = ["için", "bilgi", "vade", "aktar", "yapıldı", "teyit"];
+        const cloud = document.getElementById('errorCloud');
+        cloud.innerHTML = common.map(w => `<span class="status-pill" style="border:1px solid var(--accent)">${w}</span>`).join('');
+    }
 
-function updateVisuals(counts, avgScore, wordCounts) {
-    // Skor Güncelleme
-    document.getElementById('avgSentiment').innerText = `%${Math.round(avgScore)}`;
-    
-    // Kelime Bulutu
-    const sortedWords = Object.entries(wordCounts).sort((a,b) => b[1] - a[1]).slice(0, 15);
-    document.getElementById('keywordCloud').innerHTML = sortedWords.map(w => `<span class="keyword-badge">${w[0]} (${w[1]})</span>`).join('');
+    function renderPerformanceChart(data) {
+        const groups = {};
+        data.forEach(x => {
+            const name = x['Takım Adı'] || 'Diğer';
+            if(!groups[name]) groups[name] = {s:0, c:0};
+            groups[name].s += parseFloat(x['Form Puan']) || 0;
+            groups[name].c++;
+        });
 
-    // Grafik
-    const ctx = document.getElementById('sentimentChart').getContext('2d');
-    if(sentimentChart) sentimentChart.destroy();
-    sentimentChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Olumlu', 'Olumsuz', 'Nötr'],
-            datasets: [{
-                data: [counts.Olumlu, counts.Olumsuz, counts.Nötr],
-                backgroundColor: ['#2ecc71', '#e74c3c', '#f1c40f']
-            }]
-        },
-        options: { cutout: '70%', plugins: { legend: { position: 'right' } } }
-    });
-}
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        if(charts.perf) charts.perf.destroy();
+        charts.perf = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(groups),
+                datasets: [{
+                    label: 'Puan Ortalaması',
+                    data: Object.values(groups).map(g => (g.s/g.c).toFixed(1)),
+                    backgroundColor: '#38bdf8',
+                    borderRadius: 12
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } } }
+            }
+        });
+    }
+
+    function renderTable(data) {
+        const body = document.getElementById('tableBody');
+        body.innerHTML = data.slice(0, 20).map(x => `
+            <tr>
+                <td><div class="fw-bold">${x['Personel']}</div><div class="text-muted small">${x['Takım Adı']}</div></td>
+                <td>${x['Grup Adı']}</td>
+                <td><span class="status-pill ${parseFloat(x['Form Puan']) < 80 ? 'bg-danger' : 'bg-success'}">${x['Form Puan']}</span></td>
+                <td class="small text-muted" style="max-width:300px">${x['Açıklama Detay'] || '-'}</td>
+            </tr>
+        `).join('');
+    }
 </script>
+
 </body>
 </html>
