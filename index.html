@@ -2,97 +2,77 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Gelişmiş Veri Analitik Paneli</title>
+    <title>AI Destekli Kalite & Yorum Analizi</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --sidebar-bg: #2c3e50; --card-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .sidebar { background: var(--sidebar-bg); color: white; min-height: 100vh; padding: 20px; }
-        .dashboard-card { background: white; border-radius: 12px; padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
-        .filter-section { border-bottom: 1px solid #455a64; padding-bottom: 15px; margin-bottom: 15px; }
-        #drop-zone { border: 2px dashed #3498db; transition: 0.3s; padding: 20px; text-align: center; border-radius: 10px; cursor: pointer; }
-        #drop-zone:hover { background: rgba(52, 152, 219, 0.1); }
-        .stat-value { font-size: 1.5rem; font-weight: bold; color: #2980b9; }
+        .sentiment-positive { color: #27ae60; font-weight: bold; }
+        .sentiment-negative { color: #e74c3c; font-weight: bold; }
+        .sentiment-neutral { color: #f39c12; font-weight: bold; }
+        .keyword-badge { background: #34495e; color: white; padding: 5px 10px; border-radius: 15px; margin: 2px; display: inline-block; font-size: 0.8rem; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- SOL PANEL: Slicer ve Filtreler -->
-        <div class="col-md-3 sidebar">
-            <h4 class="mb-4">🔍 Analiz Paneli</h4>
-            
-            <div id="drop-zone" class="mb-4">
-                <input type="file" id="fileInput" hidden accept=".xlsx, .xls">
-                <span>Excel Yükle</span>
-            </div>
-
-            <div id="slicers" style="display: none;">
-                <div class="filter-section">
-                    <label class="form-label text-info">📍 Gruplama Sütunu (Lokasyon vb.)</label>
-                    <select id="groupSelect" class="form-select form-select-sm" onchange="processAndDisplay()"></select>
-                </div>
-
-                <div class="filter-section">
-                    <label class="form-label text-info">⭐ Analiz Değeri (Kalite vb.)</label>
-                    <select id="valueSelect" class="form-select form-select-sm" onchange="processAndDisplay()"></select>
-                </div>
-
-                <div class="filter-section">
-                    <label class="form-label text-info">📅 Hızlı Filtre (Slicer)</label>
-                    <div id="filterItems" class="mt-2" style="max-height: 200px; overflow-y: auto;">
-                        <!-- Dinamik checkboxlar buraya gelecek -->
-                    </div>
-                </div>
-            </div>
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <h2 class="fw-bold">Yapay Zeka Destekli Metin & Kalite Analizi</h2>
+            <p class="text-muted">Excel'deki yorumları analiz ederek kalite skorlarını otomatik belirleyin.</p>
+            <input type="file" id="fileInput" class="btn btn-primary shadow-sm" accept=".xlsx">
         </div>
+    </div>
 
-        <!-- SAĞ PANEL: Dashboard -->
-        <div class="col-md-9 p-4">
-            <div id="welcomeMessage" class="text-center mt-5">
-                <h3>Hoş Geldiniz! Lütfen analiz etmek istediğiniz Excel dosyasını yükleyin.</h3>
+    <div id="dashboard" style="display:none">
+        <div class="row g-3">
+            <!-- Sol Panel: Ayarlar ve Filtreler -->
+            <div class="col-md-3">
+                <div class="card p-3 mb-3">
+                    <label class="form-label fw-bold">Yorum Sütunu:</label>
+                    <select id="commentCol" class="form-select mb-3" onchange="performTextAnalysis()"></select>
+                    
+                    <label class="form-label fw-bold">Kategori Sütunu (Opsiyonel):</label>
+                    <select id="categoryCol" class="form-select mb-3" onchange="performTextAnalysis()"></select>
+                </div>
+
+                <div class="card p-3">
+                    <h6 class="fw-bold mb-3">Sık Geçen Kritik Kelimeler</h6>
+                    <div id="keywordCloud"></div>
+                </div>
             </div>
 
-            <div id="dashboardContent" style="display: none;">
-                <!-- Özet Kartlar -->
-                <div class="row text-center mb-4">
+            <!-- Sağ Panel: Analiz Sonuçları -->
+            <div class="col-md-9">
+                <div class="row g-3 mb-3">
                     <div class="col-md-4">
-                        <div class="dashboard-card">
-                            <div class="text-muted small">Toplam Kayıt</div>
-                            <div class="stat-value" id="statCount">0</div>
+                        <div class="card p-3 text-center bg-white">
+                            <div class="text-muted small">Genel Duygu Puanı</div>
+                            <div class="h2 mb-0" id="avgSentiment">%0</div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="dashboard-card">
-                            <div class="text-muted small">Genel Ortalama</div>
-                            <div class="stat-value" id="statAvg">0</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="dashboard-card">
-                            <div class="text-muted small">Aktif Grup Sayısı</div>
-                            <div class="stat-value" id="statGroups">0</div>
+                    <div class="col-md-8">
+                        <div class="card p-3 bg-white">
+                            <canvas id="sentimentChart" height="80"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Grafikler -->
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="dashboard-card">
-                            <h5>Lokasyon Bazlı Ortalama Analizi</h5>
-                            <canvas id="barChart" height="100"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-card mt-4">
-                    <h5>Veri Detayları</h5>
-                    <div class="table-responsive" style="max-height: 300px;">
-                        <table class="table table-hover table-sm" id="dataTable"></table>
+                <div class="card p-3">
+                    <h5 class="fw-bold mb-3">AI Yorum Analiz Listesi</h5>
+                    <div class="table-responsive" style="max-height: 500px;">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Yorum</th>
+                                    <th>Kategori</th>
+                                    <th>Duygu Analizi</th>
+                                    <th>Skor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analysisTableBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -101,117 +81,111 @@
 </div>
 
 <script>
-    let rawData = [];
-    let barChart = null;
+let workbookData = [];
+let sentimentChart = null;
 
-    document.getElementById('drop-zone').onclick = () => document.getElementById('fileInput').click();
-    document.getElementById('fileInput').onchange = (e) => handleFile(e.target.files[0]);
+// Basit Kelime Sözlüğü (Geliştirilebilir)
+const positiveWords = ["iyi", "harika", "başarılı", "hızlı", "kaliteli", "mükemmel", "teşekkür", "memnun"];
+const negativeWords = ["kötü", "yavaş", "hata", "bozuk", "kalitesiz", "yetersiz", "sorun", "eksik", "berbat"];
 
-    function handleFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            setupSelectors();
-            processAndDisplay();
-        };
-        reader.readAsArrayBuffer(file);
-    }
+document.getElementById('fileInput').addEventListener('change', (e) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const wb = XLSX.read(event.target.result, {type: 'binary'});
+        workbookData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        setupSelectors();
+    };
+    reader.readAsBinaryString(e.target.files[0]);
+});
 
-    function setupSelectors() {
-        if (rawData.length === 0) return;
-        const keys = Object.keys(rawData[0]);
-        const groupSelect = document.getElementById('groupSelect');
-        const valueSelect = document.getElementById('valueSelect');
+function setupSelectors() {
+    const keys = Object.keys(workbookData[0]);
+    const commentSelect = document.getElementById('commentCol');
+    const catSelect = document.getElementById('categoryCol');
+    
+    commentSelect.innerHTML = keys.map(k => `<option value="${k}">${k}</option>`).join('');
+    catSelect.innerHTML = `<option value="">Seçilmedi</option>` + keys.map(k => `<option value="${k}">${k}</option>`).join('');
+    
+    document.getElementById('dashboard').style.display = 'block';
+    performTextAnalysis();
+}
+
+function analyzeSentiment(text) {
+    if (!text) return { score: 0, label: "Nötr", class: "sentiment-neutral" };
+    text = text.toString().toLowerCase();
+    
+    let score = 0;
+    positiveWords.forEach(w => { if(text.includes(w)) score += 20; });
+    negativeWords.forEach(w => { if(text.includes(w)) score -= 20; });
+    
+    score = Math.max(-100, Math.min(100, score));
+    
+    if (score > 10) return { score, label: "Olumlu", class: "sentiment-positive" };
+    if (score < -10) return { score, label: "Olumsuz", class: "sentiment-negative" };
+    return { score, label: "Nötr", class: "sentiment-neutral" };
+}
+
+function performTextAnalysis() {
+    const commentCol = document.getElementById('commentCol').value;
+    const categoryCol = document.getElementById('categoryCol').value;
+    const tbody = document.getElementById('analysisTableBody');
+    const wordCounts = {};
+    
+    let totalScore = 0;
+    let counts = { Olumlu: 0, Olumsuz: 0, Nötr: 0 };
+    
+    tbody.innerHTML = "";
+    
+    workbookData.forEach(row => {
+        const text = row[commentCol];
+        const sentiment = analyzeSentiment(text);
         
-        groupSelect.innerHTML = keys.map(k => `<option value="${k}">${k}</option>`).join('');
-        valueSelect.innerHTML = keys.map(k => `<option value="${k}">${k}</option>`).join('');
-        
-        // Varsayılan olarak sayısal bir alan bulmaya çalış
-        const numericField = keys.find(k => typeof rawData[0][k] === 'number');
-        if (numericField) valueSelect.value = numericField;
+        counts[sentiment.label]++;
+        totalScore += sentiment.score;
 
-        document.getElementById('slicers').style.display = 'block';
-        document.getElementById('dashboardContent').style.display = 'block';
-        document.getElementById('welcomeMessage').style.display = 'none';
-        
-        createSlicerItems(groupSelect.value);
-    }
+        // Kelime Sayımı (Word Cloud için)
+        if(text) {
+            text.toString().split(" ").forEach(word => {
+                if(word.length > 3) wordCounts[word] = (wordCounts[word] || 0) + 1;
+            });
+        }
 
-    function createSlicerItems(column) {
-        const uniqueValues = [...new Set(rawData.map(item => item[column]))];
-        const container = document.getElementById('filterItems');
-        container.innerHTML = uniqueValues.map(v => `
-            <div class="form-check">
-                <input class="form-check-input filter-check" type="checkbox" value="${v}" id="chk_${v}" checked onchange="processAndDisplay()">
-                <label class="form-check-label small" for="chk_${v}">${v}</label>
-            </div>
-        `).join('');
-    }
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="small">${text || "-"}</td>
+            <td><span class="badge bg-secondary">${row[categoryCol] || "Genel"}</span></td>
+            <td><span class="${sentiment.class}">${sentiment.label}</span></td>
+            <td>${sentiment.score}</td>
+        `;
+        tbody.appendChild(tr);
+    });
 
-    function processAndDisplay() {
-        const groupCol = document.getElementById('groupSelect').value;
-        const valCol = document.getElementById('valueSelect').value;
-        
-        // Aktif filtreleri al
-        const activeFilters = Array.from(document.querySelectorAll('.filter-check:checked')).map(c => c.value);
-        
-        // Veriyi Filtrele
-        const filteredData = rawData.filter(d => activeFilters.includes(String(d[groupCol])));
-        
-        // Grupla ve Ortalama Al (Lokasyon Bazlı Kalite vb.)
-        const grouped = filteredData.reduce((acc, obj) => {
-            const key = obj[groupCol];
-            if (!acc[key]) acc[key] = { sum: 0, count: 0 };
-            acc[key].sum += Number(obj[valCol]) || 0;
-            acc[key].count++;
-            return acc;
-        }, {});
+    updateVisuals(counts, totalScore / workbookData.length, wordCounts);
+}
 
-        const labels = Object.keys(grouped);
-        const averages = labels.map(l => (grouped[l].sum / grouped[l].count).toFixed(2));
+function updateVisuals(counts, avgScore, wordCounts) {
+    // Skor Güncelleme
+    document.getElementById('avgSentiment').innerText = `%${Math.round(avgScore)}`;
+    
+    // Kelime Bulutu
+    const sortedWords = Object.entries(wordCounts).sort((a,b) => b[1] - a[1]).slice(0, 15);
+    document.getElementById('keywordCloud').innerHTML = sortedWords.map(w => `<span class="keyword-badge">${w[0]} (${w[1]})</span>`).join('');
 
-        updateDashboard(labels, averages, valCol, filteredData);
-    }
-
-    function updateDashboard(labels, data, labelName, filteredData) {
-        // İstatistikler
-        document.getElementById('statCount').innerText = filteredData.length;
-        const totalAvg = (data.reduce((a, b) => Number(a) + Number(b), 0) / data.length || 0).toFixed(2);
-        document.getElementById('statAvg').innerText = totalAvg;
-        document.getElementById('statGroups').innerText = labels.length;
-
-        // Grafik
-        const ctx = document.getElementById('barChart').getContext('2d');
-        if (barChart) barChart.destroy();
-        barChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: `Ortalama ${labelName}`,
-                    data: data,
-                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
-                    borderColor: '#2980b9',
-                    borderWidth: 1
-                }]
-            },
-            options: { scales: { y: { beginAtZero: true } } }
-        });
-
-        // Tabloyu Güncelle
-        renderTable(filteredData);
-    }
-
-    function renderTable(data) {
-        const table = document.getElementById('dataTable');
-        if (data.length === 0) return;
-        let html = `<thead><tr>${Object.keys(data[0]).map(k => `<th>${k}</th>`).join('')}</tr></thead>`;
-        html += `<tbody>${data.slice(0, 50).map(row => `<tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>`).join('')}</tbody>`;
-        table.innerHTML = html;
-    }
+    // Grafik
+    const ctx = document.getElementById('sentimentChart').getContext('2d');
+    if(sentimentChart) sentimentChart.destroy();
+    sentimentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Olumlu', 'Olumsuz', 'Nötr'],
+            datasets: [{
+                data: [counts.Olumlu, counts.Olumsuz, counts.Nötr],
+                backgroundColor: ['#2ecc71', '#e74c3c', '#f1c40f']
+            }]
+        },
+        options: { cutout: '70%', plugins: { legend: { position: 'right' } } }
+    });
+}
 </script>
-
 </body>
 </html>
