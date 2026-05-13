@@ -2,116 +2,128 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>IB & OB Project Based Scorecard</title>
+    <title>Advanced QA Insight & Scorecard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --main-blue: #002060; --light-blue: #f0f4f8; --accent-blue: #3b82f6; }
-        body { background: #e2e8f0; font-family: 'Inter', sans-serif; }
+        :root { --dark-navy: #0f172a; --accent: #38bdf8; --glass: rgba(255, 255, 255, 0.03); }
+        body { background: #0b0f19; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
-        /* Sol Menü - Slicer Alanı */
-        .sidebar { background: #0f172a; color: white; height: 100vh; position: fixed; width: 280px; padding: 25px; box-shadow: 4px 0 10px rgba(0,0,0,0.1); }
-        .slicer-group { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .slicer-label { font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        /* Sol Slicer Paneli */
+        .sidebar { width: 320px; background: var(--dark-navy); height: 100vh; position: fixed; padding: 25px; border-right: 1px solid #1e293b; overflow-y: auto; }
+        .filter-group { background: var(--glass); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
+        .filter-label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; display: block; }
         
-        /* Scorecard Yapısı */
-        .content { margin-left: 280px; padding: 20px; }
-        .scorecard-sheet { background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; max-width: 1100px; margin: auto; }
-        .header-strip { background: var(--main-blue); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        /* Main Dashboard */
+        .main { margin-left: 320px; padding: 30px; }
+        .scorecard-header { background: linear-gradient(90deg, #002060, #1e40af); padding: 25px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #3b82f6; }
         
-        .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: #cbd5e1; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; }
-        .kpi-item { background: white; padding: 15px; text-align: center; }
-        .kpi-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 5px; height: 35px; display: flex; align-items: center; justify-content: center; }
-        .kpi-val { font-size: 1.5rem; font-weight: 800; color: var(--main-blue); }
-
-        .section-title { background: #f1f5f9; padding: 8px 15px; font-weight: 800; font-size: 0.85rem; color: var(--main-blue); border-left: 4px solid var(--main-blue); margin-top: 20px; }
-        .data-table { font-size: 0.85rem; width: 100%; }
-        .hata-box { background: #fff1f2; border-left: 3px solid #e11d48; padding: 10px; margin-bottom: 5px; font-size: 0.8rem; }
-        .vurgu { font-weight: bold; color: #be123c; }
+        .kpi-box { background: #1e293b; border-radius: 16px; padding: 20px; border: 1px solid #334155; text-align: center; }
+        .kpi-val { font-size: 2rem; font-weight: 800; color: var(--accent); }
         
-        @media print { .sidebar { display: none; } .content { margin-left: 0; } }
+        .analysis-card { background: #1e293b; border-radius: 16px; padding: 20px; border: 1px solid #334155; height: 100%; }
+        .hata-tag { display: inline-block; padding: 5px 12px; border-radius: 20px; background: #ef444422; color: #ef4444; border: 1px solid #ef444444; margin: 4px; font-size: 0.8rem; }
+        
+        .vurgu { background: #facc15; color: #000; font-weight: bold; padding: 0 2px; }
+        .custom-table { font-size: 0.85rem; color: #cbd5e1; }
+        .custom-table thead { background: #0f172a; color: var(--accent); }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h5 class="mb-4 text-info fw-bold">QA SCORECARD</h5>
+    <h4 class="fw-bold mb-4">QA INSIGHT <span class="text-info">360</span></h4>
     
-    <div class="slicer-group">
-        <label class="slicer-label">📂 Veri Yükle</label>
-        <input type="file" id="up" class="form-control form-control-sm bg-dark text-white border-0">
+    <div class="filter-group">
+        <label class="filter-label">📂 VERİ YÜKLE</label>
+        <input type="file" id="fileIn" class="form-control form-control-sm bg-dark text-white border-0">
     </div>
 
-    <div id="filters" style="display:none">
-        <div class="slicer-group">
-            <label class="slicer-label">🚀 Proje Tipi (IB/OB)</label>
-            <div class="d-flex gap-2">
-                <input type="radio" name="proj" value="ALL" checked onchange="update()"> <small>Tümü</small>
-                <input type="radio" name="proj" value="INBOUND" onchange="update()"> <small>IB</small>
-                <input type="radio" name="proj" value="OUTBOUND" onchange="update()"> <small>OB</small>
-            </div>
+    <div id="slicerArea" style="display:none">
+        <div class="filter-group">
+            <label class="filter-label">🚀 PROJE (IB/OB)</label>
+            <select id="slProj" class="form-select form-select-sm bg-dark text-white" onchange="process()"></select>
         </div>
-
-        <div class="slicer-group">
-            <label class="slicer-label">📍 Lokasyon</label>
-            <select id="slLok" class="form-select form-select-sm" onchange="update()"></select>
+        <div class="filter-group">
+            <label class="filter-label">📍 LOKASYON</label>
+            <select id="slLok" class="form-select form-select-sm bg-dark text-white" onchange="process()"></select>
         </div>
-
-        <div class="slicer-group">
-            <label class="slicer-label">👥 Takım</label>
-            <select id="slTakim" class="form-select form-select-sm" onchange="update()"></select>
+        <div class="filter-group">
+            <label class="filter-label">👥 TAKIM LİDERİ</label>
+            <select id="slTakim" class="form-select form-select-sm bg-dark text-white" onchange="process()"></select>
         </div>
-
-        <button class="btn btn-info btn-sm w-100 mt-4 fw-bold" onclick="window.print()">Yazdır / PDF</button>
+        <div class="filter-group">
+            <label class="filter-label">📊 PUAN ARALIĞI</label>
+            <select id="slPuan" class="form-select form-select-sm bg-dark text-white" onchange="process()">
+                <option value="ALL">Tümü</option>
+                <option value="0-50">0 - 50 (Kritik)</option>
+                <option value="51-85">51 - 85 (Gelişmeli)</option>
+                <option value="86-100">86 - 100 (Başarılı)</option>
+            </select>
+        </div>
+        <button class="btn btn-info btn-sm w-100 fw-bold" onclick="window.print()">RAPORU PDF YAP</button>
     </div>
 </div>
 
-<div class="content">
-    <div id="welcome" class="text-center mt-5 text-muted">
-        <h3>DetayListe Dosyasını Yükleyin</h3>
-        <p>Proje bazlı otomatik scorecard üretilecektir.</p>
+<div class="main">
+    <div id="welcome" class="text-center mt-5 py-5">
+        <h1 class="display-4 fw-bold">Veri Bekleniyor...</h1>
+        <p class="text-muted">Excel dosyanızı yüklediğinizde açıklamalar yapay zeka mantığıyla analiz edilecektir.</p>
     </div>
 
-    <div id="scorecard" class="scorecard-sheet" style="display:none">
-        <div class="header-strip">
+    <div id="dashboard" style="display:none">
+        <div class="scorecard-header d-flex justify-content-between align-items-center">
             <div>
-                <h4 class="mb-0 fw-800" id="headerProj">GENEL KALİTE SCORECARD</h4>
-                <small id="headerDetay">Tüm Süreçler Analizi</small>
+                <h2 class="fw-bold mb-0" id="titleMain">GENEL SCORECARD</h2>
+                <span class="badge bg-info mt-2" id="titleSub">Tüm Süreçler</span>
             </div>
             <div class="text-end">
-                <div class="fw-bold" id="headerTarih">NİSAN 2026</div>
-                <div class="small opacity-75" id="headerTakim">Tüm Takımlar</div>
+                <h4 class="mb-0" id="titleDate">NİSAN 2026</h4>
+                <small class="opacity-75">QA Performance Report</small>
             </div>
         </div>
 
-        <div class="kpi-grid">
-            <div class="kpi-item"><div class="kpi-title">MT Sayısı</div><div class="kpi-val" id="valMT">0</div></div>
-            <div class="kpi-item"><div class="kpi-title">Puan Ortalaması</div><div class="kpi-val text-primary" id="valAvg">%0</div></div>
-            <div class="kpi-item"><div class="kpi-title">Dinlenen Çağrı</div><div class="kpi-val" id="valCalls">0</div></div>
-            <div class="kpi-item"><div class="kpi-title">Sıfırlanan Çağrı</div><div class="kpi-val text-danger" id="valZero">0</div></div>
-            <div class="kpi-item"><div class="kpi-title">Hata Sayısı</div><div class="kpi-val" id="valErrors">0</div></div>
+        <div class="row g-4 mb-4 text-center">
+            <div class="col-md-3"><div class="kpi-box"><div class="filter-label">MT Sayısı</div><div class="kpi-val" id="kpiMT">0</div></div></div>
+            <div class="col-md-3"><div class="kpi-box"><div class="filter-label">Ortalama Puan</div><div class="kpi-val" id="kpiAvg">%0</div></div></div>
+            <div class="col-md-3"><div class="kpi-box"><div class="filter-label">Kritik Hata Oranı</div><div class="kpi-val text-danger" id="kpiErr">%0</div></div></div>
+            <div class="col-md-3"><div class="kpi-box"><div class="filter-label">Toplam Dinleme</div><div class="kpi-val" id="kpiCalls">0</div></div></div>
         </div>
 
-        <div class="p-4">
-            <div class="row">
-                <div class="col-md-7">
-                    <div class="section-title">HATA RAPORUNDA TESPİT EDİLEN KRİTİK HATALAR</div>
-                    <div id="errorList" class="mt-3"></div>
-                    
-                    <div class="section-title">KALİTE ÖZET GRAFİĞİ</div>
-                    <div style="height:250px"><canvas id="chart"></canvas></div>
+        <div class="row g-4 mb-4">
+            <div class="col-md-7">
+                <div class="analysis-card">
+                    <h6 class="fw-bold mb-4 text-info">AÇIKLAMALARDAN OTOMATİK HATA TESPİTİ (NLP)</h6>
+                    <div id="autoHataList" class="mb-4"></div>
+                    <div style="height:250px"><canvas id="chartHata"></canvas></div>
                 </div>
-
-                <div class="col-md-5">
-                    <div class="section-title">EN BAŞARILI 5 MÜŞTERİ TEMSİLCİSİ</div>
-                    <div id="bestList" class="mt-3"></div>
-
-                    <div class="section-title">ANALİST AKSİYONLARI & ÖNERİLER</div>
-                    <div id="actionList" class="mt-3 small text-muted italic">
-                        Düşük puanlı çağrılar için eğitim ve geri bildirim planlanmıştır.
-                    </div>
+            </div>
+            <div class="col-md-5">
+                <div class="analysis-card">
+                    <h6 class="fw-bold mb-4 text-success">EN BAŞARILI 5 TEMSİLCİ</h6>
+                    <div id="bestList"></div>
+                    <hr class="border-secondary">
+                    <h6 class="fw-bold mb-3 text-warning">KRİTİK GELİŞİM ÖNERİSİ</h6>
+                    <p id="aiSuggestion" class="small text-muted italic"></p>
                 </div>
+            </div>
+        </div>
+
+        <div class="analysis-card">
+            <h6 class="fw-bold mb-4">DETAYLI ANALİST YORUMLARI & İNCELEME</h6>
+            <div class="table-responsive" style="max-height: 400px;">
+                <table class="table table-dark table-hover custom-table">
+                    <thead>
+                        <tr>
+                            <th>Personel</th>
+                            <th>Takım</th>
+                            <th>Puan</th>
+                            <th>Açıklama Detay</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -120,8 +132,17 @@
 <script>
     let db = [];
     let myChart = null;
+    // Açıklamalarda aranacak kök neden kütüphanesi
+    const errorDict = {
+        "TEYİT": ["teyit", "güvenlik", "doğrulama"],
+        "ÜSLUP": ["üslup", "nezaket", "günlük dil", "davranış"],
+        "EKSİK BİLGİ": ["eksik bilgi", "yetersiz bilgilendirme", "aktarım yapılmadı"],
+        "SİSTEM": ["sistem hatası", "log", "not almadı"],
+        "KVKK": ["kvkk", "3. şahıs", "bilgi paylaşımı"],
+        "KAPANIŞ": ["kapanış", "vedalaşma"]
+    };
 
-    document.getElementById('up').onchange = (e) => {
+    document.getElementById('fileIn').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (ev) => {
             const wb = XLSX.read(new Uint8Array(ev.target.result), {type: 'array'});
@@ -132,78 +153,126 @@
     };
 
     function init() {
+        fill('slProj', 'Arama Tipi'); // Dosyadaki IB/OB sütunu
         fill('slLok', 'Grup Adı');
         fill('slTakim', 'Takım Adı');
         document.getElementById('welcome').style.display = 'none';
-        document.getElementById('scorecard').style.display = 'block';
-        document.getElementById('filters').style.display = 'block';
-        update();
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('slicerArea').style.display = 'block';
+        process();
     }
 
     function fill(id, key) {
-        const vals = [...new Set(db.map(x => x[key]))];
-        document.getElementById(id).innerHTML = `<option value="ALL">Tümü</option>` + vals.map(v => `<option>${v}</option>`).join('');
+        const vals = [...new Set(db.map(x => x[key]).filter(x => x))];
+        document.getElementById(id).innerHTML = '<option value="ALL">Tümü</option>' + vals.map(v => `<option>${v}</option>`).join('');
     }
 
-    function update() {
-        const proj = document.querySelector('input[name="proj"]:checked').value;
-        const lok = document.getElementById('slLok').value;
-        const tak = document.getElementById('slTakim').value;
+    function process() {
+        const f = {
+            p: document.getElementById('slProj').value,
+            l: document.getElementById('slLok').value,
+            t: document.getElementById('slTakim').value,
+            s: document.getElementById('slPuan').value
+        };
 
-        // Filtrele (Arama Tipi kolonunu IB/OB olarak kullanıyoruz)
-        const data = db.filter(x => 
-            (proj === 'ALL' || x['Arama Tipi'] === proj) &&
-            (lok === 'ALL' || x['Grup Adı'] === lok) &&
-            (tak === 'ALL' || x['Takım Adı'] === tak)
-        );
+        const data = db.filter(x => {
+            const mP = f.p === 'ALL' || x['Arama Tipi'] === f.p;
+            const mL = f.l === 'ALL' || x['Grup Adı'] === f.l;
+            const mT = f.t === 'ALL' || x['Takım Adı'] === f.t;
+            const pVal = parseFloat(x['Form Puan']) || 0;
+            let mS = true;
+            if(f.s === "0-50") mS = pVal <= 50;
+            else if(f.s === "51-85") mS = pVal > 50 && pVal <= 85;
+            else if(f.s === "86-100") mS = pVal > 85;
+            return mP && mL && mT && mS;
+        });
 
-        // KPI Hesaplama
-        const mtSayisi = [...new Set(data.map(x => x['Personel']))].length;
+        updateKPIs(data);
+        const errorStats = analyzeTexts(data);
+        renderChart(errorStats);
+        renderBest(data);
+        renderTable(data);
+    }
+
+    function updateKPIs(data) {
+        const mt = [...new Set(data.map(x => x['Personel']))].length;
         const avg = (data.reduce((s, x) => s + (parseFloat(x['Form Puan']) || 0), 0) / data.length || 0).toFixed(1);
-        const zeroCalls = data.filter(x => parseFloat(x['Form Puan']) === 0).length;
-        const errors = data.filter(x => parseFloat(x['Form Puan']) < 100).length;
+        const errCount = data.filter(x => parseFloat(x['Form Puan']) < 100).length;
+        
+        document.getElementById('kpiMT').innerText = mt;
+        document.getElementById('kpiAvg').innerText = `%${avg}`;
+        document.getElementById('kpiErr').innerText = `%${((errCount/data.length)*100 || 0).toFixed(1)}`;
+        document.getElementById('kpiCalls').innerText = data.length;
+        document.getElementById('titleMain').innerText = document.getElementById('slTakim').value === 'ALL' ? 'GENEL SCORECARD' : document.getElementById('slTakim').value;
+    }
 
-        document.getElementById('valMT').innerText = mtSayisi;
-        document.getElementById('valAvg').innerText = `%${avg}`;
-        document.getElementById('valCalls').innerText = data.length;
-        document.getElementById('valZero').innerText = zeroCalls;
-        document.getElementById('valErrors').innerText = errors;
+    function analyzeTexts(data) {
+        const stats = {};
+        Object.keys(errorDict).forEach(k => stats[k] = 0);
+        
+        data.forEach(x => {
+            const txt = (x['Açıklama Detay'] || "").toLowerCase();
+            Object.entries(errorDict).forEach(([key, words]) => {
+                if(words.some(w => txt.includes(w))) stats[key]++;
+            });
+        });
 
-        // Başlıklar
-        document.getElementById('headerProj').innerText = proj === 'ALL' ? 'GENEL KALİTE SCORECARD' : proj + ' SCORECARD';
-        document.getElementById('headerTakim').innerText = tak === 'ALL' ? (lok === 'ALL' ? 'Tüm Takımlar' : lok) : tak;
+        const listHtml = Object.entries(stats).filter(e => e[1] > 0)
+            .map(e => `<span class="hata-tag">${e[0]}: ${e[1]} Kayıt</span>`).join('');
+        document.getElementById('autoHataList').innerHTML = listHtml || '<span class="text-muted">Kritik hata trendi tespit edilmedi.</span>';
+        
+        // AI Öneri
+        const maxHata = Object.entries(stats).sort((a,b) => b[1] - a[1])[0];
+        document.getElementById('aiSuggestion').innerText = maxHata[1] > 0 ? 
+            `Bu grupta en çok "${maxHata[0]}" hatası yapılıyor. Bu konuya odaklı bir coaching planlanmalıdır.` : "Veriler stabil görünüyor.";
 
-        // Hata Listesi (Açıklamalardan)
-        const errorHtml = data.filter(x => parseFloat(x['Form Puan']) < 100).slice(0, 6).map(x => `
-            <div class="hata-box">
-                <strong>${x['Personel']}:</strong> ${x['Açıklama Detay'] || 'Kritik hata tespiti yapıldı.'}
-            </div>
-        `).join('');
-        document.getElementById('errorList').innerHTML = errorHtml || '<div class="text-success small">Kritik hata bulunamadı.</div>';
+        return stats;
+    }
 
-        // Başarılı Temsilciler
+    function renderChart(stats) {
+        const ctx = document.getElementById('chartHata').getContext('2d');
+        if(myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'polarArea',
+            data: {
+                labels: Object.keys(stats),
+                datasets: [{ data: Object.values(stats), backgroundColor: ['#ef444499', '#f59e0b99', '#3b82f699', '#10b98199', '#8b5cf699', '#ec489999'] }]
+            },
+            options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#fff' } } } }
+        });
+    }
+
+    function renderBest(data) {
         const agents = data.reduce((acc, curr) => {
             if(!acc[curr['Personel']]) acc[curr['Personel']] = {s:0, c:0};
             acc[curr['Personel']].s += parseFloat(curr['Form Puan']); acc[curr['Personel']].c++;
             return acc;
         }, {});
         const sorted = Object.entries(agents).map(([n, o]) => ({n, a: o.s/o.c})).sort((a,b) => b.a - a.a).slice(0, 5);
-        document.getElementById('bestList').innerHTML = sorted.map(s => `<div class="p-2 border-bottom small">⭐ ${s.n} <span class="float-end fw-bold">%${s.a.toFixed(1)}</span></div>`).join('');
-
-        renderChart(sorted);
+        document.getElementById('bestList').innerHTML = sorted.map(s => `
+            <div class="d-flex justify-content-between mb-2 p-2 border-bottom border-secondary">
+                <span>⭐ ${s.n}</span> <span class="text-info fw-bold">%${s.a.toFixed(1)}</span>
+            </div>
+        `).join('');
     }
 
-    function renderChart(data) {
-        const ctx = document.getElementById('chart').getContext('2d');
-        if(myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.map(x => x.n),
-                datasets: [{ label: 'Başarı %', data: data.map(x => x.a), backgroundColor: '#3b82f6' }]
-            },
-            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
-        });
+    function renderTable(data) {
+        const body = document.getElementById('tableBody');
+        body.innerHTML = data.slice(0, 50).map(x => {
+            let d = x['Açıklama Detay'] || "-";
+            // Açıklamalarda hata kelimelerini parlat
+            Object.values(errorDict).flat().forEach(w => {
+                const r = new RegExp(`(${w})`, "gi");
+                d = d.replace(r, '<span class="vurgu">$1</span>');
+            });
+
+            return `<tr>
+                <td>${x['Personel']}</td>
+                <td><small>${x['Takım Adı']}</small></td>
+                <td><span class="badge ${parseFloat(x['Form Puan']) < 80 ? 'bg-danger' : 'bg-success'}">${x['Form Puan']}</span></td>
+                <td>${d}</td>
+            </tr>`;
+        }).join('');
     }
 </script>
 
